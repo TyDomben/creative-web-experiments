@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Poetry | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; font-family: 'Georgia', serif; }
+    #weather-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; transition: all 1s; }
+    .poem-display {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      text-align: center; color: white; text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+      max-width: 600px; padding: 40px;
+    }
+    .poem-display h1 { font-size: 3rem; margin-bottom: 2rem; }
+    .poem-line { font-size: 1.5rem; margin: 1rem 0; line-height: 1.8; }
+    .weather-info {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.6); padding: 15px 30px; border-radius: 12px;
+      color: white; font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>☁️ Weather Poetry</h1>
+    <p>Simulated weather becomes procedural poetry. Each weather condition generates unique verses using poetic algorithms.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>W key to cycle weather conditions</li>
+      <li>R to generate new poem</li>
+      <li>Space to animate weather</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">View Poetry</button>
+  </div>
+
+  <canvas id="weather-bg"></canvas>
+
+  <div class="poem-display" id="poem-display"></div>
+
+  <div class="weather-info" id="weather-info"></div>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="cycleWeather()">🌦️</button>
+    <button class="btn btn-icon" onclick="generatePoem()">📝</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('weather-bg');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    const weatherStates = ['sunny', 'rainy', 'stormy', 'snowy', 'foggy', 'windy', 'cloudy'];
+    let currentWeather = 'sunny';
+    let weatherIndex = 0;
+
+    let particles = [];
+
+    const poemTemplates = {
+      sunny: {
+        adjectives: ['golden', 'bright', 'warm', 'endless', 'shimmering'],
+        nouns: ['rays', 'light', 'warmth', 'glow', 'brilliance'],
+        verbs: ['dances', 'spreads', 'illuminates', 'embraces', 'caresses'],
+        contexts: ['across the sky', 'through the trees', 'on the horizon', 'in the morning', 'at noon']
+      },
+      rainy: {
+        adjectives: ['gentle', 'persistent', 'silver', 'soft', 'rhythmic'],
+        nouns: ['drops', 'rain', 'tears', 'mist', 'showers'],
+        verbs: ['falls', 'descends', 'whispers', 'taps', 'flows'],
+        contexts: ['upon the earth', 'against windows', 'through the air', 'in puddles', 'endlessly']
+      },
+      stormy: {
+        adjectives: ['fierce', 'wild', 'dark', 'powerful', 'electric'],
+        nouns: ['thunder', 'lightning', 'storm', 'tempest', 'fury'],
+        verbs: ['roars', 'crashes', 'strikes', 'rages', 'tears'],
+        contexts: ['across the heavens', 'through the night', 'without mercy', 'with violence', 'in darkness']
+      },
+      snowy: {
+        adjectives: ['silent', 'white', 'crystalline', 'peaceful', 'frozen'],
+        nouns: ['snowflakes', 'crystals', 'snow', 'frost', 'ice'],
+        verbs: ['drifts', 'swirls', 'settles', 'floats', 'blankets'],
+        contexts: ['softly down', 'on bare branches', 'in silence', 'through cold air', 'covering all']
+      },
+      foggy: {
+        adjectives: ['mysterious', 'thick', 'gray', 'obscure', 'ethereal'],
+        nouns: ['mist', 'fog', 'haze', 'vapor', 'shroud'],
+        verbs: ['creeps', 'drifts', 'conceals', 'lingers', 'obscures'],
+        contexts: ['through the valley', 'over water', 'in morning', 'everywhere', 'silently']
+      },
+      windy: {
+        adjectives: ['restless', 'fierce', 'howling', 'swift', 'invisible'],
+        nouns: ['wind', 'gale', 'breeze', 'gust', 'current'],
+        verbs: ['rushes', 'howls', 'sweeps', 'carries', 'bends'],
+        contexts: ['through branches', 'across fields', 'without cease', 'in all directions', 'relentlessly']
+      },
+      cloudy: {
+        adjectives: ['heavy', 'gray', 'brooding', 'soft', 'drifting'],
+        nouns: ['clouds', 'shadows', 'masses', 'cover', 'ceiling'],
+        verbs: ['gathers', 'drifts', 'hangs', 'rolls', 'looms'],
+        contexts: ['overhead', 'blocking sun', 'slowly moving', 'low and heavy', 'in layers']
+      }
+    };
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+      generatePoem();
+      createParticles();
+      animate();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', resizeCanvas);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'w') cycleWeather();
+        if (e.key === 'r') generatePoem();
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+      });
+    }
+
+    function generatePoem() {
+      const templates = poemTemplates[currentWeather];
+
+      const adj1 = Utils.randomChoice(templates.adjectives);
+      const adj2 = Utils.randomChoice(templates.adjectives);
+      const noun1 = Utils.randomChoice(templates.nouns);
+      const noun2 = Utils.randomChoice(templates.nouns);
+      const verb1 = Utils.randomChoice(templates.verbs);
+      const verb2 = Utils.randomChoice(templates.verbs);
+      const ctx1 = Utils.randomChoice(templates.contexts);
+      const ctx2 = Utils.randomChoice(templates.contexts);
+
+      const poemStructures = [
+        `${adj1.charAt(0).toUpperCase() + adj1.slice(1)} ${noun1} ${verb1}<br>${ctx1}<br>As ${adj2} ${noun2} ${verb2}<br>${ctx2}`,
+        `The ${adj1} ${noun1}<br>${verb1} ${ctx1}<br>While ${adj2} ${noun2}<br>${verb2} ${ctx2}`,
+        `${adj1.charAt(0).toUpperCase() + adj1.slice(1)} ${noun1}, ${adj2} ${noun2}<br>${verb1} and ${verb2}<br>${ctx1}<br>${ctx2}`
+      ];
+
+      const poem = Utils.randomChoice(poemStructures);
+
+      document.getElementById('poem-display').innerHTML = `
+        <h1>${currentWeather.charAt(0).toUpperCase() + currentWeather.slice(1)}</h1>
+        <div class="poem-line">${poem}</div>
+      `;
+
+      document.getElementById('weather-info').textContent =
+        `Current Condition: ${currentWeather.charAt(0).toUpperCase() + currentWeather.slice(1)} | ${getTemperature()}°F | ${getHumidity()}% Humidity`;
+    }
+
+    function getTemperature() {
+      const temps = { sunny: 75, rainy: 55, stormy: 52, snowy: 28, foggy: 50, windy: 60, cloudy: 58 };
+      return temps[currentWeather] + Utils.randomInt(-5, 5);
+    }
+
+    function getHumidity() {
+      const humidity = { sunny: 30, rainy: 85, stormy: 90, snowy: 70, foggy: 95, windy: 40, cloudy: 65 };
+      return humidity[currentWeather] + Utils.randomInt(-10, 10);
+    }
+
+    function createParticles() {
+      particles = [];
+      const count = currentWeather === 'rainy' || currentWeather === 'snowy' ? 200 : 50;
+
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 2,
+          vy: Math.random() * 3 + 1,
+          size: Math.random() * 3 + 1
+        });
+      }
+    }
+
+    function animate() {
+      // Draw background
+      const colors = {
+        sunny: ['#87CEEB', '#FDB813'],
+        rainy: ['#4A5568', '#2D3748'],
+        stormy: ['#1A202C', '#2D3748'],
+        snowy: ['#E2E8F0', '#CBD5E0'],
+        foggy: ['#A0AEC0', '#718096'],
+        windy: ['#63B3ED', '#4299E1'],
+        cloudy: ['#718096', '#A0AEC0']
+      };
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, colors[currentWeather][0]);
+      gradient.addColorStop(1, colors[currentWeather][1]);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw particles
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.y > height) {
+          p.y = 0;
+          p.x = Math.random() * width;
+        }
+        if (p.x < 0 || p.x > width) {
+          p.x = Math.random() * width;
+        }
+
+        ctx.beginPath();
+        if (currentWeather === 'rainy' || currentWeather === 'stormy') {
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x, p.y + p.size * 10);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        } else {
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    function cycleWeather() {
+      weatherIndex = (weatherIndex + 1) % weatherStates.length;
+      currentWeather = weatherStates[weatherIndex];
+      generatePoem();
+      createParticles();
+    }
+
+    function saveImage() {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+      const tempCtx = tempCanvas.getContext('2d');
+
+      // Copy canvas
+      tempCtx.drawImage(canvas, 0, 0);
+
+      // Draw poem text
+      const poemText = document.getElementById('poem-display').innerText;
+      tempCtx.fillStyle = 'white';
+      tempCtx.font = 'bold 48px Georgia';
+      tempCtx.textAlign = 'center';
+      tempCtx.textBaseline = 'middle';
+      tempCtx.shadowColor = 'rgba(0,0,0,0.5)';
+      tempCtx.shadowBlur = 10;
+      tempCtx.fillText(poemText.split('\n')[0], width / 2, height / 2);
+
+      Canvas.download(tempCanvas, 'weather-poetry.png');
+    }
+
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

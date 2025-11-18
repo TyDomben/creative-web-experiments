@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Algorithmic Mandalas | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #0a0a0a; }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>🌸 Algorithmic Mandalas</h1>
+    <p>Generate infinite symmetrical mandalas using mathematical algorithms. Each mandala is unique and perfectly balanced.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Click to generate new mandala</li>
+      <li>Space for random parameters</li>
+      <li>1-9 keys for different symmetries</li>
+      <li>A to animate rotation</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Begin</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="generateMandala()">🎲</button>
+    <button class="btn btn-icon" onclick="toggleAnimation()">▶️</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, centerX, centerY;
+
+    let mandala = null;
+    let isAnimating = false;
+    let rotation = 0;
+
+    class Mandala {
+      constructor() {
+        this.symmetry = Utils.randomInt(6, 16);
+        this.layers = Utils.randomInt(5, 12);
+        this.complexity = Utils.random(0.3, 0.8);
+        this.colorScheme = Utils.randomInt(0, 5);
+        this.patterns = this.generatePatterns();
+      }
+
+      generatePatterns() {
+        const patterns = [];
+        for (let i = 0; i < this.layers; i++) {
+          patterns.push({
+            radius: (i + 1) / this.layers,
+            type: Utils.randomInt(0, 5),
+            detail: Utils.randomInt(3, 12),
+            phase: Utils.random(0, Math.PI * 2),
+            amplitude: Utils.random(0.1, 0.3)
+          });
+        }
+        return patterns;
+      }
+
+      draw(angle = 0) {
+        const maxRadius = Math.min(width, height) * 0.45;
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle);
+
+        this.patterns.forEach((pattern, layerIndex) => {
+          const baseRadius = pattern.radius * maxRadius;
+
+          for (let i = 0; i < this.symmetry; i++) {
+            ctx.save();
+            ctx.rotate((i * 2 * Math.PI) / this.symmetry);
+
+            const hue = this.getColor(layerIndex);
+            ctx.strokeStyle = `hsl(${hue}, 70%, 60%)`;
+            ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+            ctx.lineWidth = 2;
+
+            switch (pattern.type) {
+              case 0: this.drawPetalPattern(pattern, baseRadius); break;
+              case 1: this.drawGeometricPattern(pattern, baseRadius); break;
+              case 2: this.drawSpiralPattern(pattern, baseRadius); break;
+              case 3: this.drawDotPattern(pattern, baseRadius); break;
+              case 4: this.drawWavePattern(pattern, baseRadius); break;
+              default: this.drawStarPattern(pattern, baseRadius); break;
+            }
+
+            ctx.restore();
+          }
+        });
+
+        ctx.restore();
+      }
+
+      drawPetalPattern(pattern, radius) {
+        ctx.beginPath();
+        for (let i = 0; i <= pattern.detail; i++) {
+          const angle = (i / pattern.detail) * Math.PI / 2;
+          const r = radius + Math.sin(angle * 2) * radius * pattern.amplitude;
+          const x = Math.cos(angle) * r;
+          const y = Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      drawGeometricPattern(pattern, radius) {
+        const sides = pattern.detail;
+        ctx.beginPath();
+        for (let i = 0; i <= sides; i++) {
+          const angle = (i / sides) * Math.PI * 2;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      drawSpiralPattern(pattern, radius) {
+        ctx.beginPath();
+        for (let i = 0; i <= 100; i++) {
+          const t = i / 100;
+          const angle = t * Math.PI / 2;
+          const r = radius * t;
+          const x = Math.cos(angle) * r;
+          const y = Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      drawDotPattern(pattern, radius) {
+        for (let i = 0; i < pattern.detail; i++) {
+          const angle = (i / pattern.detail) * Math.PI / 2;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+          ctx.beginPath();
+          ctx.arc(x, y, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      drawWavePattern(pattern, radius) {
+        ctx.beginPath();
+        for (let i = 0; i <= 50; i++) {
+          const t = i / 50;
+          const angle = t * Math.PI / 2;
+          const wave = Math.sin(t * pattern.detail * Math.PI) * pattern.amplitude * radius;
+          const r = radius + wave;
+          const x = Math.cos(angle) * r;
+          const y = Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      drawStarPattern(pattern, radius) {
+        const points = pattern.detail;
+        ctx.beginPath();
+        for (let i = 0; i <= points * 2; i++) {
+          const angle = (i * Math.PI) / points;
+          const r = i % 2 === 0 ? radius : radius * 0.6;
+          const x = Math.cos(angle) * r;
+          const y = Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      getColor(layer) {
+        const schemes = [
+          [0, 60, 120, 180, 240, 300],     // Rainbow
+          [300, 320, 340, 0, 20, 40],       // Warm
+          [180, 200, 220, 240, 260, 280],   // Cool
+          [0, 0, 0, 0, 0, 0],              // Monochrome
+          [120, 140, 160, 180, 200, 220],   // Green-Blue
+          [280, 300, 320, 340, 0, 20]       // Purple-Red
+        ];
+        const scheme = schemes[this.colorScheme];
+        return scheme[layer % scheme.length];
+      }
+    }
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+      generateMandala();
+      animate();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 2;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+      canvas.addEventListener('click', generateMandala);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ') { e.preventDefault(); generateMandala(); }
+        if (e.key === 'a') toggleAnimation();
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 9 && mandala) {
+          mandala.symmetry = num + 2;
+          draw();
+        }
+      });
+    }
+
+    function generateMandala() {
+      mandala = new Mandala();
+      draw();
+    }
+
+    function animate() {
+      draw();
+      if (isAnimating) rotation += 0.005;
+      requestAnimationFrame(animate);
+    }
+
+    function draw() {
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, width, height);
+      if (mandala) mandala.draw(rotation);
+    }
+
+    function toggleAnimation() { isAnimating = !isAnimating; }
+    function saveImage() { Canvas.download(canvas, 'mandala.png'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

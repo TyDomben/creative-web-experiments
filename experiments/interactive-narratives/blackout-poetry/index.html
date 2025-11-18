@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackout Poetry | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #f5f5dc; font-family: 'Georgia', serif; }
+    .poem-container {
+      max-width: 800px; margin: 50px auto; padding: 40px;
+      background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      line-height: 2; font-size: 18px;
+    }
+    .word {
+      display: inline-block; padding: 2px 4px; margin: 2px;
+      cursor: pointer; transition: all 0.2s; user-select: none;
+    }
+    .word:hover { background: #ffeb3b; }
+    .word.hidden { background: #000; color: #000; }
+    .word.kept { color: #e91e63; font-weight: bold; }
+    .controls-top {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.95); padding: 15px 30px;
+      border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100; display: flex; gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>✒️ Blackout Poetry</h1>
+    <p>Create poetry by hiding words. Click words to black them out, revealing hidden poems within the text. Inspired by Austin Kleon's newspaper blackout poems.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Click words to hide/reveal them</li>
+      <li>Shift+Click to mark as kept (pink)</li>
+      <li>Load different texts</li>
+      <li>Export your poem as image</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Start Creating</button>
+  </div>
+
+  <div class="controls-top">
+    <button class="btn" onclick="loadNewText()">New Text</button>
+    <button class="btn" onclick="resetPoem()">Reset</button>
+    <button class="btn" onclick="exportPoem()">Export Poem</button>
+  </div>
+
+  <div class="poem-container" id="poem-container"></div>
+
+  <div class="controls-panel">
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const texts = [
+      `In the depths of winter, I finally learned that within me there lay an invincible summer. The greatest glory in living lies not in never falling, but in rising every time we fall. Life is what happens when you're busy making other plans. The purpose of our lives is to be happy. Get busy living or get busy dying.`,
+
+      `Two roads diverged in a yellow wood, and sorry I could not travel both and be one traveler, long I stood and looked down one as far as I could to where it bent in the undergrowth. Then took the other, as just as fair, and having perhaps the better claim because it was grassy and wanted wear.`,
+
+      `To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment. For every minute you are angry you lose sixty seconds of happiness. Darkness cannot drive out darkness only light can do that. Hate cannot drive out hate only love can do that.`,
+
+      `I have not failed I have just found ten thousand ways that won't work. The only way to do great work is to love what you do. If you can dream it you can do it. Innovation distinguishes between a leader and a follower. The future belongs to those who believe in the beauty of their dreams.`,
+
+      `She walks in beauty like the night of cloudless climes and starry skies and all that's best of dark and bright meet in her aspect and her eyes. Thus mellowed to that tender light which heaven to gaudy day denies. One shade the more one ray the less had half impaired the nameless grace.`,
+
+      `It was the best of times it was the worst of times it was the age of wisdom it was the age of foolishness it was the epoch of belief it was the epoch of incredulity it was the season of light it was the season of darkness it was the spring of hope it was the winter of despair.`
+    ];
+
+    let currentText = '';
+    let wordStates = [];
+
+    function init() {
+      loadNewText();
+      setupEventListeners();
+    }
+
+    function loadNewText() {
+      currentText = Utils.randomChoice(texts);
+      const words = currentText.split(' ');
+      wordStates = words.map(() => 'visible');
+      renderPoem();
+    }
+
+    function renderPoem() {
+      const container = document.getElementById('poem-container');
+      const words = currentText.split(' ');
+
+      container.innerHTML = words.map((word, index) => {
+        return `<span class="word ${wordStates[index]}" data-index="${index}">${word}</span>`;
+      }).join(' ');
+
+      // Add click handlers
+      container.querySelectorAll('.word').forEach(wordEl => {
+        wordEl.addEventListener('click', handleWordClick);
+      });
+    }
+
+    function handleWordClick(e) {
+      const index = parseInt(e.target.dataset.index);
+
+      if (e.shiftKey) {
+        // Mark as kept (important word)
+        wordStates[index] = wordStates[index] === 'kept' ? 'visible' : 'kept';
+      } else {
+        // Toggle hidden/visible
+        if (wordStates[index] === 'hidden') {
+          wordStates[index] = 'visible';
+        } else if (wordStates[index] === 'visible') {
+          wordStates[index] = 'hidden';
+        } else if (wordStates[index] === 'kept') {
+          wordStates[index] = 'hidden';
+        }
+      }
+
+      renderPoem();
+    }
+
+    function resetPoem() {
+      wordStates = wordStates.map(() => 'visible');
+      renderPoem();
+    }
+
+    function exportPoem() {
+      // Create a canvas with the poem
+      const container = document.getElementById('poem-container');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = 800;
+      canvas.height = 1000;
+
+      // White background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw words
+      ctx.font = '24px Georgia';
+      ctx.textBaseline = 'top';
+
+      const words = currentText.split(' ');
+      let x = 40, y = 40;
+      const lineHeight = 48;
+      const maxWidth = 720;
+
+      words.forEach((word, index) => {
+        const wordWidth = ctx.measureText(word + ' ').width;
+
+        if (x + wordWidth > maxWidth) {
+          x = 40;
+          y += lineHeight;
+        }
+
+        if (wordStates[index] === 'hidden') {
+          ctx.fillStyle = '#000';
+          ctx.fillRect(x, y, wordWidth - 5, 30);
+        } else if (wordStates[index] === 'kept') {
+          ctx.fillStyle = '#e91e63';
+          ctx.fillText(word, x, y);
+        } else {
+          ctx.fillStyle = '#333';
+          ctx.fillText(word, x, y);
+        }
+
+        x += wordWidth;
+      });
+
+      // Download
+      const link = document.createElement('a');
+      link.download = 'blackout-poetry.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    function setupEventListeners() {
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'n') loadNewText();
+        if (e.key === 'r') resetPoem();
+        if (e.key === 'e') exportPoem();
+      });
+    }
+
+    function hideInstructions() {
+      document.getElementById('instructions').classList.add('hidden');
+    }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

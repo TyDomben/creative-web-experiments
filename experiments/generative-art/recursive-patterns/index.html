@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recursive Patterns | Creative Web Experiments</title>
+  <meta name="description" content="Create mesmerizing Islamic and geometric patterns through recursive algorithms.">
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #1a1a2e; }
+    .controls-overlay {
+      position: fixed; top: 20px; right: 20px;
+      background: rgba(0, 0, 0, 0.8); padding: 1.5rem;
+      border-radius: 12px; z-index: 100;
+    }
+    .controls-overlay h3 { color: #fff; margin-bottom: 1rem; }
+    .control { margin-bottom: 1rem; }
+    .control label { color: #ccc; display: block; margin-bottom: 0.5rem; }
+    .pattern-btn { width: 100%; margin-bottom: 0.5rem; }
+    .pattern-btn.active { background: var(--primary-color); color: white; }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>🕌 Recursive Patterns</h1>
+    <p>Generate infinite Islamic and geometric patterns using recursive algorithms. Each pattern is built from simple shapes repeated and transformed in mathematically precise ways.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Choose pattern type from sidebar</li>
+      <li>Adjust depth/complexity</li>
+      <li>Change colors and rotation</li>
+      <li>Spacebar to animate</li>
+      <li>S to save</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Create Patterns</button>
+  </div>
+
+  <div class="controls-overlay">
+    <h3>Pattern Controls</h3>
+    <div class="control">
+      <button class="btn pattern-btn active" onclick="setPattern('islamic')">Islamic</button>
+      <button class="btn pattern-btn" onclick="setPattern('mandala')">Mandala</button>
+      <button class="btn pattern-btn" onclick="setPattern('celtic')">Celtic</button>
+      <button class="btn pattern-btn" onclick="setPattern('fractal')">Fractal</button>
+      <button class="btn pattern-btn" onclick="setPattern('tessellation')">Tessellation</button>
+    </div>
+    <div class="control">
+      <label>Depth: <span id="depth-val">4</span></label>
+      <input type="range" id="depth" min="1" max="8" value="4" oninput="updateSettings()">
+    </div>
+    <div class="control">
+      <label>Symmetry: <span id="symmetry-val">8</span></label>
+      <input type="range" id="symmetry" min="3" max="16" value="8" oninput="updateSettings()">
+    </div>
+    <div class="control">
+      <label>Rotation: <span id="rotation-val">0°</span></label>
+      <input type="range" id="rotation" min="0" max="360" value="0" oninput="updateSettings()">
+    </div>
+    <div class="control">
+      <button class="btn" onclick="randomize()">🎲 Randomize</button>
+      <button class="btn" onclick="toggleAnimation()">▶️ Animate</button>
+    </div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="reset()" title="Reset">↻</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn btn-icon" onclick="toggleInfo()">ℹ</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <div class="info-panel" id="info-panel">
+    <h2>Recursive Patterns</h2>
+    <p>Islamic geometric patterns are based on mathematical principles of symmetry and repetition. This experiment generates patterns using recursive subdivision and transformation.</p>
+    <h3>Pattern Types</h3>
+    <p><strong>Islamic:</strong> Traditional star and polygon patterns<br>
+    <strong>Mandala:</strong> Circular symmetry patterns<br>
+    <strong>Celtic:</strong> Interwoven knot patterns<br>
+    <strong>Fractal:</strong> Self-similar recursive shapes<br>
+    <strong>Tessellation:</strong> Space-filling patterns</p>
+    <h3>Mathematics</h3>
+    <p>Uses rotational symmetry, recursive subdivision, and affine transformations. Each level multiplies complexity exponentially.</p>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, centerX, centerY;
+
+    let settings = {
+      pattern: 'islamic',
+      depth: 4,
+      symmetry: 8,
+      rotation: 0
+    };
+    let isAnimating = false;
+    let animationAngle = 0;
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+      draw();
+    }
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 2;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.scale(dpr, dpr);
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ') { e.preventDefault(); toggleAnimation(); }
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+        if (e.key === 'i') { e.preventDefault(); toggleInfo(); }
+      });
+    }
+
+    function draw() {
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate((settings.rotation + animationAngle) * Math.PI / 180);
+
+      switch(settings.pattern) {
+        case 'islamic': drawIslamicPattern(); break;
+        case 'mandala': drawMandala(); break;
+        case 'celtic': drawCelticPattern(); break;
+        case 'fractal': drawFractalPattern(); break;
+        case 'tessellation': drawTessellation(); break;
+      }
+
+      ctx.restore();
+
+      if (isAnimating) {
+        animationAngle += 0.5;
+        requestAnimationFrame(draw);
+      }
+    }
+
+    function drawIslamicPattern() {
+      const radius = Math.min(width, height) * 0.4;
+      for (let i = 0; i < settings.symmetry; i++) {
+        ctx.save();
+        ctx.rotate((i * 2 * Math.PI) / settings.symmetry);
+        drawIslamicStar(0, 0, radius, settings.depth);
+        ctx.restore();
+      }
+    }
+
+    function drawIslamicStar(x, y, size, depth) {
+      if (depth <= 0 || size < 2) return;
+
+      const points = 8;
+      const innerRadius = size * 0.4;
+      const outerRadius = size;
+
+      ctx.beginPath();
+      for (let i = 0; i < points * 2; i++) {
+        const angle = (i * Math.PI) / points;
+        const r = i % 2 === 0 ? outerRadius : innerRadius;
+        const px = x + Math.cos(angle) * r;
+        const py = y + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+
+      const hue = (depth / settings.depth) * 60 + 200;
+      ctx.strokeStyle = `hsl(${hue}, 70%, 60%)`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      for (let i = 0; i < points; i++) {
+        const angle = (i * 2 * Math.PI) / points;
+        const nx = x + Math.cos(angle) * outerRadius * 0.6;
+        const ny = y + Math.sin(angle) * outerRadius * 0.6;
+        drawIslamicStar(nx, ny, size * 0.3, depth - 1);
+      }
+    }
+
+    function drawMandala() {
+      const radius = Math.min(width, height) * 0.4;
+      for (let layer = 0; layer < settings.depth; layer++) {
+        const r = radius * (1 - layer / settings.depth);
+        for (let i = 0; i < settings.symmetry; i++) {
+          ctx.save();
+          ctx.rotate((i * 2 * Math.PI) / settings.symmetry);
+          drawMandalaElement(r, layer);
+          ctx.restore();
+        }
+      }
+    }
+
+    function drawMandalaElement(r, layer) {
+      const hue = (layer / settings.depth) * 360;
+      ctx.strokeStyle = `hsl(${hue}, 80%, 60%)`;
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      for (let i = 0; i <= 20; i++) {
+        const angle = (i / 20) * Math.PI / 4;
+        const radius = r + Math.sin(angle * 4) * 20;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(r, 0, 10 - layer * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawCelticPattern() {
+      const size = Math.min(width, height) * 0.6;
+      drawCelticKnot(0, 0, size, settings.depth);
+    }
+
+    function drawCelticKnot(x, y, size, depth) {
+      if (depth <= 0 || size < 10) return;
+
+      const points = [];
+      for (let i = 0; i < 4; i++) {
+        const angle = (i * Math.PI / 2);
+        points.push({
+          x: x + Math.cos(angle) * size / 2,
+          y: y + Math.sin(angle) * size / 2
+        });
+      }
+
+      ctx.strokeStyle = `hsl(${120 + depth * 30}, 60%, 50%)`;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+
+      for (let i = 0; i < 4; i++) {
+        const p1 = points[i];
+        const p2 = points[(i + 1) % 4];
+        const cp1x = p1.x + (p2.x - p1.x) * 0.3;
+        const cp1y = p1.y - size / 4;
+        const cp2x = p1.x + (p2.x - p1.x) * 0.7;
+        const cp2y = p1.y + size / 4;
+
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        ctx.stroke();
+      }
+
+      drawCelticKnot(x, y, size * 0.5, depth - 1);
+    }
+
+    function drawFractalPattern() {
+      drawSierpinskiTriangle(0, -height * 0.3, width * 0.6, settings.depth);
+    }
+
+    function drawSierpinskiTriangle(x, y, size, depth) {
+      if (depth <= 0) {
+        ctx.fillStyle = `hsl(${depth * 60 + 180}, 70%, 60%)`;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - size / 2, y + size * 0.866);
+        ctx.lineTo(x + size / 2, y + size * 0.866);
+        ctx.closePath();
+        ctx.fill();
+        return;
+      }
+
+      const newSize = size / 2;
+      drawSierpinskiTriangle(x, y, newSize, depth - 1);
+      drawSierpinskiTriangle(x - newSize / 2, y + newSize * 0.866, newSize, depth - 1);
+      drawSierpinskiTriangle(x + newSize / 2, y + newSize * 0.866, newSize, depth - 1);
+    }
+
+    function drawTessellation() {
+      const tileSize = 60;
+      const rows = Math.ceil(height / tileSize) + 2;
+      const cols = Math.ceil(width / tileSize) + 2;
+
+      ctx.translate(-centerX, -centerY);
+
+      for (let row = -1; row < rows; row++) {
+        for (let col = -1; col < cols; col++) {
+          const x = col * tileSize;
+          const y = row * tileSize;
+          const offset = row % 2 === 0 ? 0 : tileSize / 2;
+          drawHexagon(x + offset, y, tileSize / 2, (row + col) % settings.symmetry);
+        }
+      }
+    }
+
+    function drawHexagon(x, y, size, colorIndex) {
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI / 3);
+        const px = x + Math.cos(angle) * size;
+        const py = y + Math.sin(angle) * size;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+
+      const hue = (colorIndex / settings.symmetry) * 360;
+      ctx.fillStyle = `hsl(${hue}, 60%, 50%)`;
+      ctx.fill();
+      ctx.strokeStyle = '#1a1a2e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function setPattern(type) {
+      settings.pattern = type;
+      document.querySelectorAll('.pattern-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      draw();
+    }
+
+    function updateSettings() {
+      settings.depth = parseInt(document.getElementById('depth').value);
+      settings.symmetry = parseInt(document.getElementById('symmetry').value);
+      settings.rotation = parseInt(document.getElementById('rotation').value);
+      document.getElementById('depth-val').textContent = settings.depth;
+      document.getElementById('symmetry-val').textContent = settings.symmetry;
+      document.getElementById('rotation-val').textContent = settings.rotation + '°';
+      draw();
+    }
+
+    function randomize() {
+      settings.depth = Utils.randomInt(3, 7);
+      settings.symmetry = Utils.randomInt(4, 12);
+      settings.rotation = Utils.randomInt(0, 360);
+      document.getElementById('depth').value = settings.depth;
+      document.getElementById('symmetry').value = settings.symmetry;
+      document.getElementById('rotation').value = settings.rotation;
+      updateSettings();
+    }
+
+    function toggleAnimation() {
+      isAnimating = !isAnimating;
+      if (isAnimating) draw();
+    }
+
+    function reset() { animationAngle = 0; settings.rotation = 0; draw(); }
+    function saveImage() { Canvas.download(canvas, 'recursive-pattern.png'); }
+    function toggleInfo() { document.getElementById('info-panel').classList.toggle('open'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

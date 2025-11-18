@@ -1,6 +1,6 @@
 # ✨ Creative Web Experiments
 
-> A collection of 55+ weird, wonderful, and interactive web experiences that push the boundaries of what's possible in the browser.
+> A growing collection of 14 weird, wonderful, and interactive web experiences that push the boundaries of what's possible in the browser.
 
 ## 🌟 Overview
 
@@ -12,59 +12,49 @@ Creative Web Experiments is a curated gallery of interactive art, generative alg
 - **Shareable** - URL state persistence for sharing configurations
 - **Beautiful** - Thoughtfully designed aesthetics
 
-## 🎨 Categories
+## 🎨 Experiments
 
-### Generative Art (10 experiments)
+### Generative Art (6 experiments)
 Create infinite, procedurally-generated visual experiences
 
-- **Infinite Starfield** - Journey through endless procedural space
-- **Recursive Patterns** - Islamic and geometric pattern generator
-- **Particle Typography** - Text that comes alive with particle physics
-- *+ 7 more experiments*
+1. **Infinite Starfield** - Journey through endless procedural space with spatial hashing
+2. **Particle Typography** - Text explodes into thousands of interactive particles
+3. **Recursive Patterns** - Islamic and geometric patterns via recursive algorithms
+4. **Flowing Ribbons** - Physics-based silk simulation with Verlet integration
+5. **Algorithmic Mandalas** - Symmetrical pattern generator with 6 drawing modes
+6. **Fractal Tree Garden** - L-system tree growth with wind physics
 
-### Audio-Visual (10 experiments)
+### Audio-Visual (1 experiment)
 Experiments that blend sound and sight
 
-- **Theremin in Space** - Control ethereal sounds with mouse position
-- **Beat Visualizer** - Upload music and watch it dance
-- **Voice Painter** - Paint with your voice (pitch and volume)
-- *+ 7 more experiments*
+1. **Theremin in Space** - Digital theremin with Web Audio API and FFT visualization
 
-### Interactive Narratives (10 experiments)
+### Interactive Narratives (2 experiments)
 Stories and text that respond to your choices
 
-- **Branching Poem** - Click words to reshape narratives
-- **Blackout Poetry** - Hide words to reveal hidden poems
-- *+ 8 more experiments*
+1. **Branching Poem** - Click words to reshape the narrative path
+2. **Blackout Poetry** - Hide words to reveal hidden poems (Austin Kleon style)
 
-### Physics & Simulation (10 experiments)
+### Physics & Simulation (1 experiment)
 Real-time physics and natural phenomena
 
-- **Gravity Playground** - Place planets and watch orbits form
-- **Cloth Simulator** - Realistic fabric physics
-- **Double Pendulum Chaos** - Beautiful chaotic motion
-- *+ 7 more experiments*
+1. **Double Pendulum Chaos** - Chaotic motion with RK4 integration and trail visualization
 
-### Data as Art (5 experiments)
+### Data as Art (1 experiment)
 Transform data into beautiful visualizations
 
-- **Wikipedia Rabbit Hole** - Visualize your link journeys
-- **Weather Poetry** - Current weather as verse
-- *+ 3 more experiments*
+1. **Weather Poetry** - Procedurally generated poetry from weather conditions
 
-### Optical/Perceptual (5 experiments)
+### Optical/Perceptual (1 experiment)
 Illusions and visual tricks
 
-- **Impossible Objects** - Escher-inspired 3D illusions
-- **Moiré Patterns** - Hypnotic interference patterns
-- *+ 3 more experiments*
+1. **Moiré Patterns** - Interference patterns with 5 pattern types (lines, circles, grid, waves, dots)
 
-### Playful/Whimsical (5 experiments)
+### Playful/Whimsical (2 experiments)
 Just for fun and relaxation
 
-- **Digital Zen Garden** - Rake sand patterns, find peace
-- **Bubble Wrap Infinite** - Pop bubbles forever
-- *+ 3 more experiments*
+1. **Digital Zen Garden** - Meditative sand raking with 4 tools (rake, smooth, stone, circle)
+2. **Bubble Wrap Infinite** - Satisfying bubble popping with achievements and combos
 
 ## 🚀 Getting Started
 

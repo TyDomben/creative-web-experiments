@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flowing Ribbons | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>🎀 Flowing Ribbons</h1>
+    <p>Physics-based silk ribbon simulation. Watch ribbons flow, twist, and interact with realistic fabric physics.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Click and drag to create ribbons</li>
+      <li>Move mouse to create wind</li>
+      <li>Space to clear all</li>
+      <li>C to change colors</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Start</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="clearRibbons()">🗑️</button>
+    <button class="btn btn-icon" onclick="cycleColor()">🎨</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    let ribbons = [];
+    let colorIndex = 0;
+    const colors = ['#ff6b9d', '#c44569', '#00d2ff', '#3a7bd5', '#7f00ff', '#e100ff'];
+    let mouseX = 0, mouseY = 0, lastMouseX = 0, lastMouseY = 0;
+    let isDrawing = false;
+
+    class RibbonPoint {
+      constructor(x, y) {
+        this.x = x; this.y = y;
+        this.px = x; this.py = y;
+        this.vx = 0; this.vy = 0;
+        this.pinned = false;
+      }
+
+      update() {
+        if (this.pinned) return;
+
+        const vx = this.x - this.px;
+        const vy = this.y - this.py;
+        this.px = this.x;
+        this.py = this.y;
+
+        this.vx = vx * 0.99;
+        this.vy = vy * 0.99;
+
+        // Gravity
+        this.vy += 0.3;
+
+        // Wind from mouse movement
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 200) {
+          const force = (200 - dist) / 200;
+          this.vx += (mouseX - lastMouseX) * force * 0.1;
+          this.vy += (mouseY - lastMouseY) * force * 0.1;
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Boundaries
+        if (this.y > height) {
+          this.y = height;
+          this.vy *= -0.5;
+        }
+        if (this.x < 0 || this.x > width) {
+          this.vx *= -0.5;
+          this.x = Utils.constrain(this.x, 0, width);
+        }
+      }
+    }
+
+    class Ribbon {
+      constructor(x, y, color) {
+        this.points = [];
+        this.color = color;
+        this.segments = 40;
+        this.segmentLength = 15;
+
+        for (let i = 0; i < this.segments; i++) {
+          const point = new RibbonPoint(x, y + i * this.segmentLength);
+          if (i === 0) point.pinned = true;
+          this.points.push(point);
+        }
+      }
+
+      update() {
+        this.points.forEach(p => p.update());
+
+        // Constraint solving - keep segments at fixed length
+        for (let iter = 0; iter < 3; iter++) {
+          for (let i = 0; i < this.points.length - 1; i++) {
+            const p1 = this.points[i];
+            const p2 = this.points[i + 1];
+
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const diff = this.segmentLength - dist;
+            const percent = diff / dist / 2;
+            const offsetX = dx * percent;
+            const offsetY = dy * percent;
+
+            if (!p1.pinned) {
+              p1.x -= offsetX;
+              p1.y -= offsetY;
+            }
+            if (!p2.pinned) {
+              p2.x += offsetX;
+              p2.y += offsetY;
+            }
+          }
+        }
+      }
+
+      draw() {
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 20;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Draw ribbon with gradient
+        for (let i = 0; i < this.points.length - 1; i++) {
+          const p1 = this.points[i];
+          const p2 = this.points[i + 1];
+
+          const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+          const alpha1 = (i / this.points.length);
+          const alpha2 = ((i + 1) / this.points.length);
+          gradient.addColorStop(0, this.color.replace(')', `, ${alpha1 * 0.8})`).replace('rgb', 'rgba'));
+          gradient.addColorStop(1, this.color.replace(')', `, ${alpha2 * 0.8})`).replace('rgb', 'rgba'));
+
+          ctx.strokeStyle = gradient;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+
+        // Draw highlights
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 10;
+        for (let i = 0; i < this.points.length - 1; i++) {
+          const p1 = this.points[i];
+          const p2 = this.points[i + 1];
+          ctx.beginPath();
+          ctx.moveTo(p1.x - 3, p1.y - 3);
+          ctx.lineTo(p2.x - 3, p2.y - 3);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+      animate();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', resizeCanvas);
+
+      canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        createRibbon(e.clientX, e.clientY);
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+
+        if (isDrawing && Utils.dist(mouseX, mouseY, lastMouseX, lastMouseY) > 30) {
+          createRibbon(mouseX, mouseY);
+        }
+      });
+
+      canvas.addEventListener('mouseup', () => { isDrawing = false; });
+
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        isDrawing = true;
+        createRibbon(touch.clientX, touch.clientY);
+      });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+        mouseX = touch.clientX;
+        mouseY = touch.clientY;
+      });
+
+      canvas.addEventListener('touchend', () => { isDrawing = false; });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ') { e.preventDefault(); clearRibbons(); }
+        if (e.key === 'c') cycleColor();
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+      });
+    }
+
+    function createRibbon(x, y) {
+      const color = colors[colorIndex % colors.length];
+      ribbons.push(new Ribbon(x, y, color));
+      if (ribbons.length > 20) ribbons.shift();
+    }
+
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+
+      ribbons.forEach(ribbon => {
+        ribbon.update();
+        ribbon.draw();
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    function clearRibbons() { ribbons = []; }
+    function cycleColor() { colorIndex++; }
+    function saveImage() { Canvas.download(canvas, 'flowing-ribbons.png'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

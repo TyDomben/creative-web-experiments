@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fractal Tree Garden | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: linear-gradient(180deg, #87CEEB 0%, #90EE90 100%); }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>🌳 Fractal Tree Garden</h1>
+    <p>Watch algorithmic trees grow using L-systems and recursive branching. Each tree is uniquely generated with realistic botanical properties.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Click to plant a new tree</li>
+      <li>Space to clear garden</li>
+      <li>G to toggle growth animation</li>
+      <li>W to toggle wind</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Plant Trees</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="clearGarden()">🗑️</button>
+    <button class="btn btn-icon" onclick="toggleGrowth()">🌱</button>
+    <button class="btn btn-icon" onclick="toggleWind()">💨</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    let trees = [];
+    let isGrowing = true;
+    let hasWind = false;
+    let windPhase = 0;
+
+    class FractalTree {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.branches = [];
+        this.maxDepth = Utils.randomInt(8, 12);
+        this.angle = Utils.random(15, 30);
+        this.lengthFactor = Utils.random(0.6, 0.75);
+        this.growthProgress = 0;
+        this.targetGrowth = 1;
+        this.trunkWidth = Utils.random(8, 15);
+        this.leafColor = `hsl(${Utils.random(100, 140)}, ${Utils.random(60, 80)}%, 40%)`;
+        this.generate();
+      }
+
+      generate() {
+        const initialLength = Utils.random(80, 120);
+        this.branches = [];
+        this.generateBranch(this.x, this.y, -90, initialLength, this.trunkWidth, 0);
+      }
+
+      generateBranch(x, y, angle, length, width, depth) {
+        if (depth > this.maxDepth || length < 2) {
+          // Add leaf
+          if (depth > this.maxDepth - 3) {
+            this.branches.push({
+              type: 'leaf',
+              x, y,
+              size: Utils.random(3, 8),
+              depth
+            });
+          }
+          return;
+        }
+
+        const radian = angle * Math.PI / 180;
+        const endX = x + Math.cos(radian) * length;
+        const endY = y + Math.sin(radian) * length;
+
+        this.branches.push({
+          type: 'branch',
+          x1: x, y1: y,
+          x2: endX, y2: endY,
+          width, depth
+        });
+
+        const newLength = length * this.lengthFactor;
+        const newWidth = width * 0.7;
+
+        // Create 2-3 branches
+        const numBranches = depth < 3 ? 2 : Utils.randomInt(2, 4);
+        for (let i = 0; i < numBranches; i++) {
+          const angleVariation = Utils.random(-this.angle, this.angle);
+          const branchAngle = angle + angleVariation;
+          this.generateBranch(endX, endY, branchAngle, newLength, newWidth, depth + 1);
+        }
+      }
+
+      update(windForce = 0) {
+        if (this.growthProgress < this.targetGrowth) {
+          this.growthProgress += 0.02;
+        }
+      }
+
+      draw(windForce = 0) {
+        const visibleBranches = Math.floor(this.branches.length * this.growthProgress);
+
+        this.branches.slice(0, visibleBranches).forEach(branch => {
+          if (branch.type === 'branch') {
+            // Apply wind effect to endpoints
+            const windEffect = Math.sin(windPhase + branch.depth) * windForce * (branch.depth / this.maxDepth);
+            const x2 = branch.x2 + windEffect * 10;
+
+            ctx.strokeStyle = `rgb(${100 - branch.depth * 5}, ${70 - branch.depth * 3}, ${40 - branch.depth * 2})`;
+            ctx.lineWidth = branch.width;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(branch.x1, branch.y1);
+            ctx.lineTo(x2, branch.y2);
+            ctx.stroke();
+
+          } else if (branch.type === 'leaf') {
+            const windEffect = Math.sin(windPhase + branch.depth * 0.5) * windForce;
+            const x = branch.x + windEffect * 5;
+
+            ctx.fillStyle = this.leafColor;
+            ctx.beginPath();
+            ctx.arc(x, branch.y, branch.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+      }
+    }
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+      // Plant a few initial trees
+      for (let i = 0; i < 3; i++) {
+        plantTree(width * (0.25 + i * 0.25), height);
+      }
+      animate();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', resizeCanvas);
+      canvas.addEventListener('click', (e) => plantTree(e.clientX, e.clientY));
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        plantTree(touch.clientX, touch.clientY);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ') { e.preventDefault(); clearGarden(); }
+        if (e.key === 'g') toggleGrowth();
+        if (e.key === 'w') toggleWind();
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+      });
+    }
+
+    function plantTree(x, y) {
+      trees.push(new FractalTree(x, y));
+      if (trees.length > 15) trees.shift();
+    }
+
+    function animate() {
+      // Draw sky
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(1, '#90EE90');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw ground
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(0, height - 50, width, 50);
+      ctx.fillStyle = '#228B22';
+      ctx.fillRect(0, height - 60, width, 15);
+
+      const windForce = hasWind ? 1 : 0;
+      if (hasWind) windPhase += 0.05;
+
+      trees.forEach(tree => {
+        if (isGrowing) tree.update(windForce);
+        tree.draw(windForce);
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    function clearGarden() { trees = []; }
+    function toggleGrowth() { isGrowing = !isGrowing; }
+    function toggleWind() { hasWind = !hasWind; }
+    function saveImage() { Canvas.download(canvas, 'fractal-tree-garden.png'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

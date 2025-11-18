@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moiré Patterns | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>〰️ Moiré Patterns</h1>
+    <p>Create hypnotic interference patterns by overlaying geometric shapes. Moiré patterns emerge from the interaction of two repetitive patterns.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Mouse to control secondary pattern</li>
+      <li>Scroll to change spacing</li>
+      <li>1-5 keys for pattern types</li>
+      <li>Space to animate</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Begin</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="cyclePattern()">🔄</button>
+    <button class="btn btn-icon" onclick="toggleAnimation()">▶️</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    let patternType = 0; // 0=lines, 1=circles, 2=grid, 3=waves, 4=dots
+    let spacing = 20;
+    let offset = 0;
+    let isAnimating = false;
+    let mouseX = 0, mouseY = 0;
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+      animate();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', resizeCanvas);
+      canvas.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        spacing += e.deltaY * 0.1;
+        spacing = Math.max(5, Math.min(100, spacing));
+      });
+      document.addEventListener('keydown', (e) => {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 5) patternType = num - 1;
+        if (e.key === ' ') { e.preventDefault(); toggleAnimation(); }
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+      });
+    }
+
+    function animate() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+
+      if (isAnimating) offset += 0.5;
+
+      // Draw base pattern
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = '#ff00ff';
+      drawPattern(0, 0, 0);
+
+      // Draw offset pattern
+      ctx.fillStyle = '#00ffff';
+      const offsetX = (mouseX - width / 2) * 0.1;
+      const offsetY = (mouseY - height / 2) * 0.1;
+      drawPattern(offsetX + offset, offsetY, offset * 0.5);
+
+      ctx.globalCompositeOperation = 'source-over';
+
+      requestAnimationFrame(animate);
+    }
+
+    function drawPattern(offsetX, offsetY, rotation) {
+      ctx.save();
+      ctx.translate(width / 2 + offsetX, height / 2 + offsetY);
+      ctx.rotate(rotation * Math.PI / 180);
+
+      switch(patternType) {
+        case 0: drawLines(); break;
+        case 1: drawCircles(); break;
+        case 2: drawGrid(); break;
+        case 3: drawWaves(); break;
+        case 4: drawDots(); break;
+      }
+
+      ctx.restore();
+    }
+
+    function drawLines() {
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = spacing * 0.4;
+      const numLines = Math.ceil(Math.max(width, height) / spacing) + 2;
+
+      for (let i = -numLines / 2; i < numLines / 2; i++) {
+        const y = i * spacing;
+        ctx.beginPath();
+        ctx.moveTo(-width, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawCircles() {
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = 2;
+      const maxRadius = Math.max(width, height);
+      const numCircles = Math.ceil(maxRadius / spacing);
+
+      for (let i = 1; i < numCircles; i++) {
+        ctx.beginPath();
+        ctx.arc(0, 0, i * spacing, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = spacing * 0.3;
+      const numLines = Math.ceil(Math.max(width, height) / spacing) + 2;
+
+      // Vertical lines
+      for (let i = -numLines / 2; i < numLines / 2; i++) {
+        const x = i * spacing;
+        ctx.beginPath();
+        ctx.moveTo(x, -height);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+
+      // Horizontal lines
+      for (let i = -numLines / 2; i < numLines / 2; i++) {
+        const y = i * spacing;
+        ctx.beginPath();
+        ctx.moveTo(-width, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawWaves() {
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = 2;
+      const numWaves = Math.ceil(height / spacing);
+
+      for (let i = -numWaves; i < numWaves; i++) {
+        ctx.beginPath();
+        for (let x = -width; x < width; x += 5) {
+          const y = i * spacing + Math.sin(x * 0.02) * spacing * 0.3;
+          if (x === -width) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    function drawDots() {
+      ctx.fillStyle = ctx.fillStyle;
+      const numX = Math.ceil(width / spacing);
+      const numY = Math.ceil(height / spacing);
+
+      for (let i = -numX / 2; i < numX / 2; i++) {
+        for (let j = -numY / 2; j < numY / 2; j++) {
+          ctx.beginPath();
+          ctx.arc(i * spacing, j * spacing, spacing * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    function cyclePattern() { patternType = (patternType + 1) % 5; }
+    function toggleAnimation() { isAnimating = !isAnimating; }
+    function saveImage() { Canvas.download(canvas, 'moire-pattern.png'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
