@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>NARRATIVE_EXP</title><link rel="stylesheet" href="../../../shared/styles.css">
+<style>body{margin:0;padding:40px;background:#1a1a2e;color:#e0e0e0;font-family:Georgia,serif}.story{max-width:800px;margin:0 auto;line-height:2}
+.interactive{cursor:pointer;padding:2px 6px;border-radius:4px;transition:all .2s}.interactive:hover{background:var(--primary-color);color:#fff}</style></head><body>
+<div class="instructions-overlay" id="instructions"><h1>📖 Interactive Narrative</h1><p>An interactive story experience. Click elements to explore.</p>
+<button class="btn btn-primary" onclick="hideInstructions()">Begin</button></div>
+<div class="story" id="story"></div>
+<div class="controls-panel"><button class="btn btn-icon" onclick="reset()">↻</button><button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button></div>
+<script src="../../../shared/utils.js"></script>
+<script>
+const stories=[
+  {text:"In a distant {realm|kingdom|world}, a {brave|curious|young} {hero|wanderer|seeker} discovered a {ancient|mysterious|hidden} {artifact|treasure|secret}.",
+   endings:["{They lived happily ever after.|The adventure had just begun.|But this was only the beginning.}"]},
+  {text:"Once upon a {time|moment|day}, in a {small|quiet|forgotten} village, there was a {magical|strange|wonderful} {tree|fountain|garden}.",
+   endings:["{And it granted wishes.|That changed everything.|Which held great power.}"]}
+];
+
+let currentStory=0,choices=[];
+
+function init(){displayStory()}
+function displayStory(){
+const story=stories[currentStory];
+let html=processText(story.text);
+if(choices.length>3)html+='<br><br>'+processText(story.endings[0]);
+document.getElementById('story').innerHTML=html;
+document.querySelectorAll('.interactive').forEach(el=>el.addEventListener('click',handleClick))}
+
+function processText(text){
+return text.replace(/\{([^}]+)\}/g,(match,options)=>{
+const opts=options.split('|');
+return`<span class="interactive" data-options="${options}">${opts[0]}</span>`})}
+
+function handleClick(e){
+const opts=e.target.dataset.options.split('|');
+const next=(opts.indexOf(e.target.textContent)+1)%opts.length;
+e.target.textContent=opts[next];
+choices.push(next);
+if(choices.length>5)displayStory()}
+
+function reset(){choices=[];currentStory=(currentStory+1)%stories.length;displayStory()}
+function hideInstructions(){document.getElementById('instructions').classList.add('hidden')}
+window.addEventListener('load',init)
+</script></body></html>

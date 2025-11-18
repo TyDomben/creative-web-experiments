@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>PLAYFUL_EXP</title><link rel="stylesheet" href="../../../shared/styles.css">
+<style>body{margin:0;overflow:hidden;background:linear-gradient(180deg,#87CEEB,#E0F6FF)}</style></head><body>
+<div class="instructions-overlay" id="instructions"><h1>☁️ Playful Experience</h1><p>A whimsical, relaxing interactive experience. Click and drag to create.</p>
+<button class="btn btn-primary" onclick="hideInstructions()">Play</button></div>
+<canvas id="canvas"></canvas>
+<div class="controls-panel"><button class="btn btn-icon" onclick="clearAll()">🗑️</button><button class="btn btn-icon" onclick="saveImage()">⬇</button>
+<button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button></div>
+<script src="../../../shared/utils.js"></script>
+<script>
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+let w,h,objects=[];
+
+class PlayObject{
+constructor(x,y){this.x=x;this.y=y;this.vx=Utils.random(-1,1);this.vy=Utils.random(-2,0);
+this.size=Utils.random(30,80);this.opacity=Utils.random(0.3,0.8)}
+update(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.02}
+draw(){ctx.globalAlpha=this.opacity;ctx.fillStyle='#fff';
+ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();
+ctx.arc(this.x+this.size*.7,this.y,this.size*.8,0,Math.PI*2);ctx.fill();
+ctx.arc(this.x+this.size*1.5,this.y,this.size*.6,0,Math.PI*2);ctx.fill();
+ctx.globalAlpha=1}}
+
+function init(){w=window.innerWidth;h=window.innerHeight;canvas.width=w;canvas.height=h;
+canvas.addEventListener('click',e=>objects.push(new PlayObject(e.clientX,e.clientY)));
+canvas.addEventListener('touchstart',e=>{e.preventDefault();
+const t=e.touches[0];objects.push(new PlayObject(t.clientX,t.clientY))});animate()}
+
+function animate(){const gradient=ctx.createLinearGradient(0,0,0,h);
+gradient.addColorStop(0,'#87CEEB');gradient.addColorStop(1,'#E0F6FF');
+ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);
+
+objects=objects.filter(o=>{o.update();o.draw();return o.y<h+100});
+requestAnimationFrame(animate)}
+
+function clearAll(){objects=[]}
+function saveImage(){Canvas.download(canvas,'playful-creation.png')}
+function hideInstructions(){document.getElementById('instructions').classList.add('hidden')}
+window.addEventListener('load',init)
+</script></body></html>

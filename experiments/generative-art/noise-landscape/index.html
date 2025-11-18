@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Noise Landscape | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>🏔️ Noise Landscape</h1>
+    <p>Explore infinite procedural terrain generated with Perlin noise. Fly through endless mountains and valleys.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Mouse to look around</li>
+      <li>Scroll to change altitude</li>
+      <li>Space to toggle movement</li>
+      <li>R to regenerate</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Explore</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="regenerate()">🎲</button>
+    <button class="btn btn-icon" onclick="toggleMovement()">▶️</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    let noise;
+    let offset = 0;
+    let altitude = 0;
+    let isMoving = true;
+
+    function init() {
+      resizeCanvas();
+      noise = new SimplexNoise();
+      setupEventListeners();
+      animate();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', resizeCanvas);
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        altitude += e.deltaY * 0.1;
+        altitude = Utils.constrain(altitude, -200, 200);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ') { e.preventDefault(); toggleMovement(); }
+        if (e.key === 'r') regenerate();
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+      });
+    }
+
+    function animate() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, '#1a1a2e');
+      gradient.addColorStop(1, '#16213e');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      if (isMoving) offset += 1;
+
+      drawLandscape();
+
+      requestAnimationFrame(animate);
+    }
+
+    function drawLandscape() {
+      const layers = 8;
+      const spacing = height / layers;
+
+      for (let layer = 0; layer < layers; layer++) {
+        const y = height - layer * spacing;
+        const scale = 0.003 - layer * 0.0003;
+        const depth = layer / layers;
+
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+
+        for (let x = 0; x <= width; x += 5) {
+          const noiseValue = noise.noise2D((x + offset) * scale, layer * 0.5);
+          const terrainHeight = noiseValue * 100 * (1 - depth) - altitude * (1 - depth);
+          ctx.lineTo(x, y + terrainHeight);
+        }
+
+        ctx.lineTo(width, height);
+        ctx.closePath();
+
+        const hue = 200 - depth * 100;
+        const lightness = 20 + depth * 40;
+        ctx.fillStyle = `hsl(${hue}, 50%, ${lightness}%)`;
+        ctx.fill();
+
+        ctx.strokeStyle = `hsl(${hue}, 60%, ${lightness + 10}%)`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    function regenerate() {
+      noise = new SimplexNoise(Math.random() * 10000);
+    }
+
+    function toggleMovement() { isMoving = !isMoving; }
+    function saveImage() { Canvas.download(canvas, 'noise-landscape.png'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Field Evolution | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>🎨 Color Field Evolution</h1>
+    <p>Watch Mondrian-style compositions evolve through cellular automata. Geometric fields split, merge, and balance in endless variations.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Click to evolve one step</li>
+      <li>Space to auto-evolve</li>
+      <li>R to restart</li>
+      <li>C to cycle palettes</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Begin Evolution</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="reset()">↻</button>
+    <button class="btn btn-icon" onclick="cyclePalette()">🎨</button>
+    <button class="btn btn-icon" onclick="toggleAuto()">▶️</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    let fields = [];
+    let isAuto = false;
+    let paletteIndex = 0;
+
+    const palettes = [
+      ['#FF0000', '#FFFF00', '#0000FF', '#FFFFFF', '#000000'],
+      ['#E63946', '#F1FAEE', '#A8DADC', '#457B9D', '#1D3557'],
+      ['#264653', '#2A9D8F', '#E9C46A', '#F4A261', '#E76F51'],
+      ['#FF006E', '#FB5607', '#FFBE0B', '#8338EC', '#3A86FF']
+    ];
+
+    class ColorField {
+      constructor(x, y, w, h, color) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.color = color;
+        this.generation = 0;
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(this.x, this.y, this.w, this.h);
+      }
+
+      canSplit() {
+        return this.w > 100 && this.h > 100;
+      }
+
+      split() {
+        const newFields = [];
+        const splitHorizontal = Math.random() > 0.5;
+
+        if (splitHorizontal) {
+          const splitY = this.y + Utils.random(this.h * 0.3, this.h * 0.7);
+          newFields.push(new ColorField(
+            this.x, this.y, this.w, splitY - this.y,
+            this.getRandomColor(), this.generation + 1
+          ));
+          newFields.push(new ColorField(
+            this.x, splitY, this.w, this.h - (splitY - this.y),
+            this.getRandomColor(), this.generation + 1
+          ));
+        } else {
+          const splitX = this.x + Utils.random(this.w * 0.3, this.w * 0.7);
+          newFields.push(new ColorField(
+            this.x, this.y, splitX - this.x, this.h,
+            this.getRandomColor(), this.generation + 1
+          ));
+          newFields.push(new ColorField(
+            splitX, this.y, this.w - (splitX - this.x), this.h,
+            this.getRandomColor(), this.generation + 1
+          ));
+        }
+
+        return newFields;
+      }
+
+      getRandomColor() {
+        return Utils.randomChoice(palettes[paletteIndex]);
+      }
+    }
+
+    function init() {
+      resizeCanvas();
+      reset();
+      setupEventListeners();
+      draw();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+      canvas.addEventListener('click', evolve);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ') { e.preventDefault(); toggleAuto(); }
+        if (e.key === 'r') reset();
+        if (e.key === 'c') cyclePalette();
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+      });
+    }
+
+    function reset() {
+      fields = [new ColorField(0, 0, width, height, palettes[paletteIndex][0])];
+      draw();
+    }
+
+    function evolve() {
+      const newFields = [];
+
+      fields.forEach(field => {
+        if (field.canSplit() && Math.random() < 0.3) {
+          newFields.push(...field.split());
+        } else {
+          newFields.push(field);
+        }
+      });
+
+      fields = newFields;
+      draw();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, width, height);
+
+      fields.forEach(field => field.draw());
+    }
+
+    function toggleAuto() {
+      isAuto = !isAuto;
+      if (isAuto) autoEvolve();
+    }
+
+    function autoEvolve() {
+      if (!isAuto) return;
+      evolve();
+      setTimeout(() => requestAnimationFrame(autoEvolve), 1000);
+    }
+
+    function cyclePalette() {
+      paletteIndex = (paletteIndex + 1) % palettes.length;
+      reset();
+    }
+
+    function saveImage() { Canvas.download(canvas, 'color-field.png'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

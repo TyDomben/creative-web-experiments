@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glitch Art Generator | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    .glitch-controls { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 8px; z-index: 100; }
+    .glitch-controls label { color: #fff; display: block; margin: 10px 0; font-size: 0.9rem; }
+    input[type="file"] { display: none; }
+    .upload-btn { cursor: pointer; background: var(--primary-color); padding: 10px 20px; border-radius: 6px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>📺 Glitch Art Generator</h1>
+    <p>Transform images into glitch art using databending techniques. Upload an image and watch it distort in real-time with pixel sorting, channel shifting, and data corruption effects.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Upload an image to glitch</li>
+      <li>Adjust glitch intensity</li>
+      <li>Choose glitch type</li>
+      <li>Click to trigger new glitch</li>
+      <li>Space to animate</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Start Glitching</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="glitch-controls">
+    <label class="upload-btn" for="file-input">📁 Upload Image</label>
+    <input type="file" id="file-input" accept="image/*" onchange="loadImage(event)">
+    <label>Intensity: <span id="intensity-val">50</span>%<br>
+    <input type="range" id="intensity" min="0" max="100" value="50" oninput="updateSettings()"></label>
+    <label>Type:<br>
+    <select id="glitch-type" onchange="updateSettings()">
+      <option value="pixel-sort">Pixel Sort</option>
+      <option value="channel-shift">Channel Shift</option>
+      <option value="databend">Data Bend</option>
+      <option value="scanlines">Scanlines</option>
+      <option value="corrupt">Corruption</option>
+    </select></label>
+    <button class="btn" onclick="glitchImage()" style="width:100%; margin-top:10px;">⚡ Glitch It</button>
+    <button class="btn" onclick="toggleAnimation()" style="width:100%; margin-top:5px;">▶️ Animate</button>
+  </div>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="resetImage()">↻</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let sourceImage = null;
+    let sourceImageData = null;
+    let settings = { intensity: 50, type: 'pixel-sort' };
+    let isAnimating = false;
+
+    function init() {
+      resizeCanvas();
+      createDefaultImage();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function createDefaultImage() {
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      for (let i = 0; i < 10; i++) {
+        gradient.addColorStop(i / 10, `hsl(${i * 36}, 70%, 50%)`);
+      }
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 48px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('UPLOAD AN IMAGE TO GLITCH', width/2, height/2);
+
+      sourceImageData = ctx.getImageData(0, 0, width, height);
+    }
+
+    function loadImage(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          ctx.clearRect(0, 0, width, height);
+          const scale = Math.min(width / img.width, height / img.height);
+          const w = img.width * scale;
+          const h = img.height * scale;
+          const x = (width - w) / 2;
+          const y = (height - h) / 2;
+          ctx.drawImage(img, x, y, w, h);
+          sourceImageData = ctx.getImageData(0, 0, width, height);
+          sourceImage = img;
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function glitchImage() {
+      if (!sourceImageData) return;
+
+      const imageData = ctx.createImageData(sourceImageData);
+      const data = imageData.data;
+
+      for (let i = 0; i < sourceImageData.data.length; i++) {
+        data[i] = sourceImageData.data[i];
+      }
+
+      const intensity = settings.intensity / 100;
+
+      switch(settings.type) {
+        case 'pixel-sort':
+          pixelSort(data, intensity);
+          break;
+        case 'channel-shift':
+          channelShift(data, intensity);
+          break;
+        case 'databend':
+          dataBend(data, intensity);
+          break;
+        case 'scanlines':
+          scanlines(data, intensity);
+          break;
+        case 'corrupt':
+          corrupt(data, intensity);
+          break;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    function pixelSort(data, intensity) {
+      const w = width;
+      const h = height;
+      const threshold = 128;
+
+      for (let y = 0; y < h; y++) {
+        if (Math.random() > intensity) continue;
+
+        let sortStart = -1;
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
+
+          if (brightness > threshold && sortStart === -1) {
+            sortStart = x;
+          } else if (brightness <= threshold && sortStart !== -1) {
+            sortRow(data, y, sortStart, x, w);
+            sortStart = -1;
+          }
+        }
+      }
+    }
+
+    function sortRow(data, y, start, end, w) {
+      const pixels = [];
+      for (let x = start; x < end; x++) {
+        const i = (y * w + x) * 4;
+        pixels.push({
+          r: data[i],
+          g: data[i+1],
+          b: data[i+2],
+          a: data[i+3],
+          brightness: (data[i] + data[i+1] + data[i+2]) / 3
+        });
+      }
+
+      pixels.sort((a, b) => a.brightness - b.brightness);
+
+      for (let x = start; x < end; x++) {
+        const i = (y * w + x) * 4;
+        const pixel = pixels[x - start];
+        data[i] = pixel.r;
+        data[i+1] = pixel.g;
+        data[i+2] = pixel.b;
+        data[i+3] = pixel.a;
+      }
+    }
+
+    function channelShift(data, intensity) {
+      const shift = Math.floor(intensity * 50);
+      const temp = new Uint8ClampedArray(data);
+
+      for (let i = 0; i < data.length; i += 4) {
+        const shiftedR = i + shift * 4;
+        const shiftedB = i - shift * 4;
+
+        if (shiftedR < data.length) {
+          data[i] = temp[shiftedR];
+        }
+        if (shiftedB >= 0) {
+          data[i+2] = temp[shiftedB+2];
+        }
+      }
+    }
+
+    function dataBend(data, intensity) {
+      const blockSize = Math.floor(intensity * 100);
+      for (let i = 0; i < data.length; i += blockSize * 4) {
+        if (Math.random() < intensity) {
+          const swapTarget = Math.floor(Math.random() * (data.length - blockSize * 4));
+          for (let j = 0; j < blockSize * 4; j++) {
+            const temp = data[i + j];
+            data[i + j] = data[swapTarget + j];
+            data[swapTarget + j] = temp;
+          }
+        }
+      }
+    }
+
+    function scanlines(data, intensity) {
+      for (let y = 0; y < height; y++) {
+        if (y % 3 !== 0) continue;
+        for (let x = 0; x < width; x++) {
+          const i = (y * width + x) * 4;
+          data[i] *= (1 - intensity * 0.5);
+          data[i+1] *= (1 - intensity * 0.5);
+          data[i+2] *= (1 - intensity * 0.5);
+        }
+      }
+    }
+
+    function corrupt(data, intensity) {
+      const corruptAmount = Math.floor(data.length * intensity * 0.1);
+      for (let i = 0; i < corruptAmount; i++) {
+        const pos = Math.floor(Math.random() * data.length);
+        data[pos] = Math.floor(Math.random() * 256);
+      }
+    }
+
+    function updateSettings() {
+      settings.intensity = parseInt(document.getElementById('intensity').value);
+      settings.type = document.getElementById('glitch-type').value;
+      document.getElementById('intensity-val').textContent = settings.intensity;
+    }
+
+    function toggleAnimation() {
+      isAnimating = !isAnimating;
+      if (isAnimating) animate();
+    }
+
+    function animate() {
+      if (!isAnimating) return;
+      glitchImage();
+      setTimeout(() => requestAnimationFrame(animate), 100);
+    }
+
+    function resetImage() {
+      if (sourceImageData) {
+        ctx.putImageData(sourceImageData, 0, 0);
+      }
+    }
+
+    function saveImage() { Canvas.download(canvas, 'glitch-art.png'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+    window.addEventListener('resize', resizeCanvas);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === ' ') { e.preventDefault(); glitchImage(); }
+      if (e.key === 's') { e.preventDefault(); saveImage(); }
+    });
+  </script>
+</body>
+</html>

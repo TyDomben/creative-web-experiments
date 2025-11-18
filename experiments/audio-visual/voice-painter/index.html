@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Voice Painter</title><link rel="stylesheet" href="../../../shared/styles.css">
+<style>body{margin:0;overflow:hidden;background:#000}.mic-btn{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:5rem;cursor:pointer;transition:all .3s}.mic-btn:hover{transform:translate(-50%,-50%)scale(1.1)}.mic-btn.active{color:#f00;animation:pulse 1s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}</style></head><body>
+<div class="instructions-overlay" id="instructions"><h1>🎤 Voice Painter</h1><p>Paint with your voice! Pitch controls color, volume controls brush size, duration creates trails.</p><h3>Controls:</h3><ul><li>Click microphone to start</li><li>Speak/sing to paint</li><li>Higher pitch = different colors</li><li>Louder = bigger brush</li></ul><button class="btn btn-primary" onclick="hideInstructions()">Start</button></div>
+<div class="mic-btn" id="mic-btn" onclick="toggleMic()">🎤</div>
+<canvas id="canvas"></canvas>
+<div class="controls-panel"><button class="btn btn-icon" onclick="clearCanvas()">🗑️</button><button class="btn btn-icon" onclick="saveImage()">⬇</button><button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button></div>
+<script src="../../../shared/utils.js"></script>
+<script>
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+let width,height,audioContext,analyser,microphone,isRecording=false;
+
+function init(){resizeCanvas();ctx.fillStyle='#000';ctx.fillRect(0,0,width,height)}
+function resizeCanvas(){width=window.innerWidth;height=window.innerHeight;canvas.width=width;canvas.height=height}
+
+async function toggleMic(){
+if(!isRecording){
+try{
+const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+audioContext=new AudioContext();
+analyser=audioContext.createAnalyser();
+microphone=audioContext.createMediaStreamSource(stream);
+microphone.connect(analyser);
+analyser.fftSize=2048;
+isRecording=true;
+document.getElementById('mic-btn').classList.add('active');
+document.getElementById('mic-btn').style.display='none';
+draw()}catch(e){alert('Microphone access denied')}
+}else{isRecording=false;if(microphone)microphone.disconnect();document.getElementById('mic-btn').classList.remove('active')}}
+
+function draw(){
+if(!isRecording)return;
+const dataArray=new Uint8Array(analyser.frequencyBinCount);
+analyser.getByteFrequencyData(dataArray);
+
+let sum=0,peak=0,peakFreq=0;
+for(let i=0;i<dataArray.length;i++){sum+=dataArray[i];if(dataArray[i]>peak){peak=dataArray[i];peakFreq=i}}
+const avg=sum/dataArray.length;
+
+if(avg>10){
+const x=Math.random()*width;
+const y=height/2+(Math.random()-.5)*height*.6;
+const size=Utils.map(avg,0,100,5,50);
+const hue=Utils.map(peakFreq,0,dataArray.length,0,360);
+
+ctx.globalAlpha=.7;
+const gradient=ctx.createRadialGradient(x,y,0,x,y,size);
+gradient.addColorStop(0,`hsla(${hue},80%,60%,.8)`);
+gradient.addColorStop(1,`hsla(${hue},80%,60%,0)`);
+ctx.fillStyle=gradient;
+ctx.beginPath();
+ctx.arc(x,y,size,0,Math.PI*2);
+ctx.fill();
+ctx.globalAlpha=1}
+
+requestAnimationFrame(draw)}
+
+function clearCanvas(){ctx.fillStyle='#000';ctx.fillRect(0,0,width,height)}
+function saveImage(){Canvas.download(canvas,'voice-painting.png')}
+function hideInstructions(){document.getElementById('instructions').classList.add('hidden')}
+window.addEventListener('load',init);
+window.addEventListener('resize',resizeCanvas)
+</script></body></html>

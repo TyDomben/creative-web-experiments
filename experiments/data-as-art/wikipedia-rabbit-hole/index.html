@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>DATA_ART</title><link rel="stylesheet" href="../../../shared/styles.css">
+<style>body{margin:0;overflow:hidden;background:#1a1a2e}</style></head><body>
+<div class="instructions-overlay" id="instructions"><h1>📊 Data as Art</h1><p>Transform data into beautiful visualizations. Watch numbers become art.</p>
+<button class="btn btn-primary" onclick="hideInstructions()">Visualize</button></div>
+<canvas id="canvas"></canvas>
+<div class="controls-panel"><button class="btn btn-icon" onclick="regenerate()">🎲</button><button class="btn btn-icon" onclick="saveImage()">⬇</button>
+<button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button></div>
+<script src="../../../shared/utils.js"></script>
+<script>
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+let w,h,dataPoints=[];
+
+function init(){w=window.innerWidth;h=window.innerHeight;canvas.width=w;canvas.height=h;regenerate();animate()}
+
+function regenerate(){dataPoints=[];
+for(let i=0;i<50;i++)dataPoints.push({x:Utils.random(0,w),y:Utils.random(0,h),
+value:Utils.random(10,100),hue:Utils.random(0,360)})}
+
+function animate(){ctx.fillStyle='rgba(26,26,46,0.1)';ctx.fillRect(0,0,w,h);
+dataPoints.forEach((d,i)=>{const size=d.value/2;
+ctx.fillStyle=`hsla(${d.hue},70%,60%,0.6)`;ctx.beginPath();ctx.arc(d.x,d.y,size,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle=`hsl(${d.hue},70%,50%)`;ctx.lineWidth=1;
+if(i<dataPoints.length-1){ctx.beginPath();ctx.moveTo(d.x,d.y);
+ctx.lineTo(dataPoints[i+1].x,dataPoints[i+1].y);ctx.stroke()}});
+requestAnimationFrame(animate)}
+
+function saveImage(){Canvas.download(canvas,'data-art.png')}
+function hideInstructions(){document.getElementById('instructions').classList.add('hidden')}
+window.addEventListener('load',init)
+</script></body></html>

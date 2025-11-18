@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beat Visualizer | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    #file-input { display: none; }
+    .upload-area {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(99, 102, 241, 0.1); border: 3px dashed var(--primary-color);
+      padding: 60px; border-radius: 20px; text-align: center; cursor: pointer;
+      transition: all 0.3s;
+    }
+    .upload-area:hover { background: rgba(99, 102, 241, 0.2); transform: translate(-50%, -50%) scale(1.05); }
+    .upload-area.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>🎵 Beat Visualizer</h1>
+    <p>Upload music and watch it transform into dancing visual frequencies. Real-time FFT analysis creates reactive visuals.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Upload an audio file</li>
+      <li>1-5 for visualization modes</li>
+      <li>Space to pause/play</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Start</button>
+  </div>
+
+  <label for="file-input" class="upload-area" id="upload-area">
+    <h2 style="color:var(--primary-color);margin:0;">🎵 Upload Audio File</h2>
+    <p style="color:var(--text-secondary);margin-top:1rem;">Click or drop MP3, WAV, OGG</p>
+  </label>
+  <input type="file" id="file-input" accept="audio/*">
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" id="play-btn" onclick="togglePlay()">▶️</button>
+    <button class="btn btn-icon" onclick="cycleMode()">🎨</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    let audioContext, analyser, dataArray, bufferLength, source;
+    let isPlaying = false;
+    let visualMode = 0;
+    const modes = ['bars', 'circle', 'waveform', 'particles', 'ripples'];
+
+    let particles = [];
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+      animate();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', resizeCanvas);
+
+      const fileInput = document.getElementById('file-input');
+      const uploadArea = document.getElementById('upload-area');
+
+      uploadArea.addEventListener('click', () => fileInput.click());
+
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#fff';
+      });
+
+      uploadArea.addEventListener('dragleave', () => {
+        uploadArea.style.borderColor = 'var(--primary-color)';
+      });
+
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = 'var(--primary-color)';
+        if (e.dataTransfer.files.length > 0) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ' && audioContext) { e.preventDefault(); togglePlay(); }
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 5) visualMode = num - 1;
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+      });
+    }
+
+    function handleFile(file) {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        audioContext.decodeAudioData(e.target.result, (buffer) => {
+          if (source) source.stop();
+          source = audioContext.createBufferSource();
+          source.buffer = buffer;
+          source.connect(analyser);
+          analyser.connect(audioContext.destination);
+          source.start(0);
+          isPlaying = true;
+          document.getElementById('upload-area').classList.add('hidden');
+          document.getElementById('play-btn').textContent = '⏸️';
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+
+      if (analyser) {
+        analyser.getByteFrequencyData(dataArray);
+        
+        switch(modes[visualMode]) {
+          case 'bars': drawBars(); break;
+          case 'circle': drawCircle(); break;
+          case 'waveform': drawWaveform(); break;
+          case 'particles': drawParticles(); break;
+          case 'ripples': drawRipples(); break;
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function drawBars() {
+      const barWidth = (width / bufferLength) * 2.5;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * height;
+        const hue = (i / bufferLength) * 360;
+        ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+        ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+        x += barWidth + 1;
+      }
+    }
+
+    function drawCircle() {
+      ctx.save();
+      ctx.translate(width / 2, height / 2);
+
+      for (let i = 0; i < bufferLength; i++) {
+        const angle = (i / bufferLength) * Math.PI * 2;
+        const radius = 100 + (dataArray[i] / 255) * 200;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+
+        const hue = (i / bufferLength) * 360;
+        ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawWaveform() {
+      analyser.getByteTimeDomainData(dataArray);
+
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+
+      const sliceWidth = width / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * height / 2;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+      }
+
+      ctx.stroke();
+    }
+
+    function drawParticles() {
+      const avg = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+
+      if (avg > 50 && particles.length < 500) {
+        particles.push({
+          x: width / 2,
+          y: height / 2,
+          vx: Utils.random(-5, 5),
+          vy: Utils.random(-5, 5),
+          life: 1,
+          hue: Math.random() * 360
+        });
+      }
+
+      particles = particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.01;
+
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = `hsl(${p.hue}, 70%, 50%)`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        return p.life > 0;
+      });
+    }
+
+    function drawRipples() {
+      const avg = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+      const maxRadius = Math.min(width, height) / 2;
+      const ripples = 5;
+
+      ctx.save();
+      ctx.translate(width / 2, height / 2);
+
+      for (let i = 0; i < ripples; i++) {
+        const radius = (i / ripples) * maxRadius + (avg / 255) * 100;
+        const alpha = 1 - (i / ripples);
+        const hue = (i / ripples) * 360;
+
+        ctx.strokeStyle = `hsla(${hue}, 70%, 50%, ${alpha})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function togglePlay() {
+      if (!audioContext) return;
+
+      if (audioContext.state === 'running') {
+        audioContext.suspend();
+        isPlaying = false;
+        document.getElementById('play-btn').textContent = '▶️';
+      } else {
+        audioContext.resume();
+        isPlaying = true;
+        document.getElementById('play-btn').textContent = '⏸️';
+      }
+    }
+
+    function cycleMode() {
+      visualMode = (visualMode + 1) % modes.length;
+    }
+
+    function saveImage() { Canvas.download(canvas, 'beat-visualizer.png'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

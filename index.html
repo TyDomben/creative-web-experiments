@@ -300,7 +300,7 @@
     <h1>✨ Creative Web Experiments</h1>
     <p>
       Weird, wonderful, and interactive experiences that push the boundaries of web technology.
-      Explore 14 complete experiments in generative art, audio-visual synthesis, physics simulation, and more.
+      Explore 55 complete experiments in generative art, audio-visual synthesis, physics simulation, and more.
     </p>
     <div style="margin-top: 2rem;">
       <button class="btn btn-primary" onclick="randomExperiment()">
@@ -404,147 +404,76 @@
     // EXPERIMENT DATA
     // ============================================
 
-    const experiments = [
-      // Generative Art (6 experiments)
-      {
-        id: 'infinite-starfield',
-        title: 'Infinite Starfield',
-        description: 'Journey through an endless procedural cosmos. Zoom in and out to reveal infinite detail.',
-        category: 'generative-art',
-        tags: ['procedural', 'space', 'calming'],
-        path: 'experiments/generative-art/infinite-starfield/index.html',
-        new: true
-      },
-      {
-        id: 'particle-typography',
-        title: 'Particle Typography',
-        description: 'Watch your words come alive as thousands of particles dance and reform.',
-        category: 'generative-art',
-        tags: ['particles', 'text', 'interactive'],
-        path: 'experiments/generative-art/particle-typography/index.html',
-        new: true
-      },
-      {
-        id: 'recursive-patterns',
-        title: 'Recursive Patterns',
-        description: 'Create mesmerizing Islamic and geometric patterns through recursive algorithms.',
-        category: 'generative-art',
-        tags: ['geometric', 'mathematical', 'beautiful'],
-        path: 'experiments/generative-art/recursive-patterns/index.html',
-        new: true
-      },
-      {
-        id: 'flowing-ribbons',
-        title: 'Flowing Ribbons',
-        description: 'Physics-based silk simulation with realistic fabric dynamics.',
-        category: 'generative-art',
-        tags: ['physics', 'silk', 'beautiful'],
-        path: 'experiments/generative-art/flowing-ribbons/index.html',
-        new: true
-      },
-      {
-        id: 'algorithmic-mandalas',
-        title: 'Algorithmic Mandalas',
-        description: 'Generate infinite symmetrical mandalas using mathematical patterns.',
-        category: 'generative-art',
-        tags: ['mandala', 'symmetry', 'meditation'],
-        path: 'experiments/generative-art/algorithmic-mandalas/index.html',
-        new: true
-      },
-      {
-        id: 'fractal-tree-garden',
-        title: 'Fractal Tree Garden',
-        description: 'Watch algorithmic trees grow using L-systems and recursive branching.',
-        category: 'generative-art',
-        tags: ['fractals', 'nature', 'growth'],
-        path: 'experiments/generative-art/fractal-tree-garden/index.html',
-        new: true
-      },
+const experiments = [
+  // Generative Art (10)
+  {id:'infinite-starfield',title:'Infinite Starfield',description:'Journey through endless procedural cosmos',category:'generative-art',tags:['procedural','space','calming'],path:'experiments/generative-art/infinite-starfield/index.html',new:true},
+  {id:'particle-typography',title:'Particle Typography',description:'Words come alive as particles',category:'generative-art',tags:['particles','text'],path:'experiments/generative-art/particle-typography/index.html',new:true},
+  {id:'recursive-patterns',title:'Recursive Patterns',description:'Islamic and geometric patterns',category:'generative-art',tags:['geometric','mathematical'],path:'experiments/generative-art/recursive-patterns/index.html',new:true},
+  {id:'flowing-ribbons',title:'Flowing Ribbons',description:'Physics-based silk simulation',category:'generative-art',tags:['physics','silk'],path:'experiments/generative-art/flowing-ribbons/index.html',new:true},
+  {id:'algorithmic-mandalas',title:'Algorithmic Mandalas',description:'Symmetrical mandala generator',category:'generative-art',tags:['mandala','symmetry'],path:'experiments/generative-art/algorithmic-mandalas/index.html',new:true},
+  {id:'fractal-tree-garden',title:'Fractal Tree Garden',description:'L-system tree growth',category:'generative-art',tags:['fractals','nature'],path:'experiments/generative-art/fractal-tree-garden/index.html',new:true},
+  {id:'glitch-art-generator',title:'Glitch Art Generator',description:'Databend images in real-time',category:'generative-art',tags:['glitch','digital'],path:'experiments/generative-art/glitch-art-generator/index.html',new:true},
+  {id:'digital-paint-drips',title:'Digital Paint Drips',description:'Fluid simulation art',category:'generative-art',tags:['fluid','paint'],path:'experiments/generative-art/digital-paint-drips/index.html',new:true},
+  {id:'noise-landscape',title:'Noise Landscape',description:'Perlin noise terrain explorer',category:'generative-art',tags:['procedural','landscape'],path:'experiments/generative-art/noise-landscape/index.html',new:true},
+  {id:'color-field-evolution',title:'Color Field Evolution',description:'Mondrian-style generator',category:'generative-art',tags:['abstract','evolution'],path:'experiments/generative-art/color-field-evolution/index.html',new:true},
 
-      // Audio-Visual (1 experiment)
-      {
-        id: 'theremin-space',
-        title: 'Theremin in Space',
-        description: 'Control ethereal sounds with your mouse position. A digital theremin meets cosmic visuals.',
-        category: 'audio-visual',
-        tags: ['sound', 'interactive', 'musical'],
-        path: 'experiments/audio-visual/theremin-space/index.html',
-        new: true
-      },
+  // Audio-Visual (10)
+  {id:'theremin-space',title:'Theremin in Space',description:'Digital theremin instrument',category:'audio-visual',tags:['sound','interactive'],path:'experiments/audio-visual/theremin-space/index.html',new:true},
+  {id:'beat-visualizer',title:'Beat Visualizer',description:'Music visualization with FFT',category:'audio-visual',tags:['music','visualization'],path:'experiments/audio-visual/beat-visualizer/index.html',new:true},
+  {id:'voice-painter',title:'Voice Painter',description:'Paint with your voice',category:'audio-visual',tags:['voice','creative'],path:'experiments/audio-visual/voice-painter/index.html',new:true},
+  {id:'synesthesia-simulator',title:'Synesthesia Simulator',description:'Colors make sounds',category:'audio-visual',tags:['synesthesia','sensory'],path:'experiments/audio-visual/synesthesia-simulator/index.html',new:true},
+  {id:'rhythm-garden',title:'Rhythm Garden',description:'Plants grow with beats',category:'audio-visual',tags:['rhythm','growth'],path:'experiments/audio-visual/rhythm-garden/index.html',new:true},
+  {id:'harmonic-sand',title:'Harmonic Sand',description:'Chladni plate simulation',category:'audio-visual',tags:['harmonic','physics'],path:'experiments/audio-visual/harmonic-sand/index.html',new:true},
+  {id:'echo-chamber',title:'Echo Chamber',description:'Spatial audio playground',category:'audio-visual',tags:['audio','spatial'],path:'experiments/audio-visual/echo-chamber/index.html',new:true},
+  {id:'frequency-forest',title:'Frequency Forest',description:'Audio spectrum landscape',category:'audio-visual',tags:['frequency','visualization'],path:'experiments/audio-visual/frequency-forest/index.html',new:true},
+  {id:'loop-station',title:'Loop Station',description:'Build layers of loops',category:'audio-visual',tags:['loops','music'],path:'experiments/audio-visual/loop-station/index.html',new:true},
+  {id:'ambient-space',title:'Ambient Space',description:'Generative ambient music',category:'audio-visual',tags:['ambient','generative'],path:'experiments/audio-visual/ambient-space/index.html',new:true},
 
-      // Interactive Narratives (2 experiments)
-      {
-        id: 'branching-poem',
-        title: 'Branching Poem',
-        description: 'Click words to reshape the narrative. Every choice creates a new story.',
-        category: 'narratives',
-        tags: ['text', 'interactive', 'storytelling'],
-        path: 'experiments/interactive-narratives/branching-poem/index.html',
-        new: true
-      },
-      {
-        id: 'blackout-poetry',
-        title: 'Blackout Poetry Tool',
-        description: 'Hide words to reveal hidden poems. A digital take on newspaper blackout poetry.',
-        category: 'narratives',
-        tags: ['poetry', 'creative', 'minimalist'],
-        path: 'experiments/interactive-narratives/blackout-poetry/index.html',
-        new: true
-      },
+  // Interactive Narratives (10)
+  {id:'branching-poem',title:'Branching Poem',description:'Click words to reshape story',category:'narratives',tags:['text','interactive'],path:'experiments/interactive-narratives/branching-poem/index.html',new:true},
+  {id:'blackout-poetry',title:'Blackout Poetry',description:'Hide words to reveal poems',category:'narratives',tags:['poetry','creative'],path:'experiments/interactive-narratives/blackout-poetry/index.html',new:true},
+  {id:'memory-palace',title:'Memory Palace',description:'Navigate 3D memory space',category:'narratives',tags:['3D','memory'],path:'experiments/interactive-narratives/memory-palace/index.html',new:true},
+  {id:'dream-journal',title:'Dream Journal Visualizer',description:'Text becomes abstract art',category:'narratives',tags:['dreams','visualization'],path:'experiments/interactive-narratives/dream-journal/index.html',new:true},
+  {id:'infinite-library',title:'Infinite Library',description:'Procedural book generator',category:'narratives',tags:['procedural','books'],path:'experiments/interactive-narratives/infinite-library/index.html',new:true},
+  {id:'conversation-trees',title:'Conversation Trees',description:'Dialogue exploration',category:'narratives',tags:['dialogue','branching'],path:'experiments/interactive-narratives/conversation-trees/index.html',new:true},
+  {id:'emoji-story-generator',title:'Emoji Story Generator',description:'Tales in emoji',category:'narratives',tags:['emoji','stories'],path:'experiments/interactive-narratives/emoji-story-generator/index.html',new:true},
+  {id:'story-remix',title:'Story Remix Machine',description:'Mash up narratives',category:'narratives',tags:['remix','creative'],path:'experiments/interactive-narratives/story-remix/index.html',new:true},
+  {id:'parallel-timeline',title:'Parallel Timeline',description:'See alternate paths',category:'narratives',tags:['timeline','branching'],path:'experiments/interactive-narratives/parallel-timeline/index.html',new:true},
+  {id:'whispered-secrets',title:'Whispered Secrets',description:'Click to reveal hidden text',category:'narratives',tags:['secrets','interactive'],path:'experiments/interactive-narratives/whispered-secrets/index.html',new:true},
 
-      // Physics & Simulation (1 experiment)
-      {
-        id: 'double-pendulum',
-        title: 'Double Pendulum Chaos',
-        description: 'Watch chaos theory in action. Tiny changes lead to wildly different outcomes.',
-        category: 'physics',
-        tags: ['chaos', 'physics', 'mesmerizing'],
-        path: 'experiments/physics-simulation/double-pendulum/index.html',
-        new: true
-      },
+  // Physics & Simulation (10)
+  {id:'double-pendulum',title:'Double Pendulum Chaos',description:'Chaos theory visualization',category:'physics',tags:['chaos','physics'],path:'experiments/physics-simulation/double-pendulum/index.html',new:true},
+  {id:'gravity-playground',title:'Gravity Playground',description:'Place planets, watch orbits',category:'physics',tags:['gravity','simulation'],path:'experiments/physics-simulation/gravity-playground/index.html',new:true},
+  {id:'cloth-simulator',title:'Cloth Simulator',description:'Realistic fabric physics',category:'physics',tags:['cloth','physics'],path:'experiments/physics-simulation/cloth-simulator/index.html',new:true},
+  {id:'water-ripple-tank',title:'Water Ripple Tank',description:'Wave interference',category:'physics',tags:['waves','water'],path:'experiments/physics-simulation/water-ripple-tank/index.html',new:true},
+  {id:'chain-reaction',title:'Chain Reaction',description:'Rube Goldberg machine',category:'physics',tags:['reaction','domino'],path:'experiments/physics-simulation/chain-reaction/index.html',new:true},
+  {id:'bouncing-universe',title:'Bouncing Universe',description:'Elastic collisions',category:'physics',tags:['collision','bouncing'],path:'experiments/physics-simulation/bouncing-universe/index.html',new:true},
+  {id:'magnetic-field',title:'Magnetic Field Visualizer',description:'Iron filing simulation',category:'physics',tags:['magnetism','field'],path:'experiments/physics-simulation/magnetic-field/index.html',new:true},
+  {id:'smoke-flow',title:'Smoke & Flow',description:'Fluid dynamics art',category:'physics',tags:['fluid','smoke'],path:'experiments/physics-simulation/smoke-flow/index.html',new:true},
+  {id:'spring-mesh',title:'Spring Mesh',description:'Soft body physics',category:'physics',tags:['springs','softbody'],path:'experiments/physics-simulation/spring-mesh/index.html',new:true},
+  {id:'orbital-mechanics',title:'Orbital Mechanics',description:'Launch satellites',category:'physics',tags:['orbital','space'],path:'experiments/physics-simulation/orbital-mechanics/index.html',new:true},
 
-      // Data as Art (1 experiment)
-      {
-        id: 'weather-poetry',
-        title: 'Weather Poetry',
-        description: 'Simulated weather becomes procedural poetry. Rain, sun, and wind as verse.',
-        category: 'data-art',
-        tags: ['data', 'poetry', 'generative'],
-        path: 'experiments/data-as-art/weather-poetry/index.html',
-        new: true
-      },
+  // Data as Art (5)
+  {id:'weather-poetry',title:'Weather Poetry',description:'Weather becomes verse',category:'data-art',tags:['weather','poetry'],path:'experiments/data-as-art/weather-poetry/index.html',new:true},
+  {id:'personal-data-sculpture',title:'Personal Data Sculpture',description:'Stats become 3D art',category:'data-art',tags:['data','3D'],path:'experiments/data-as-art/personal-data-sculpture/index.html',new:true},
+  {id:'wikipedia-rabbit-hole',title:'Wikipedia Rabbit Hole',description:'Visualize link journeys',category:'data-art',tags:['wikipedia','visualization'],path:'experiments/data-as-art/wikipedia-rabbit-hole/index.html',new:true},
+  {id:'github-contribution-garden',title:'GitHub Contribution Garden',description:'Commits as nature',category:'data-art',tags:['github','garden'],path:'experiments/data-as-art/github-contribution-garden/index.html',new:true},
+  {id:'time-zone-clock',title:'Time Zone Clock',description:'World time as art',category:'data-art',tags:['time','global'],path:'experiments/data-as-art/time-zone-clock/index.html',new:true},
 
-      // Optical/Perceptual (1 experiment)
-      {
-        id: 'moire-patterns',
-        title: 'Moiré Pattern Generator',
-        description: 'Create hypnotic interference patterns through overlapping geometries.',
-        category: 'optical',
-        tags: ['patterns', 'optical', 'mesmerizing'],
-        path: 'experiments/optical-illusions/moire-patterns/index.html',
-        new: true
-      },
+  // Optical/Perceptual (5)
+  {id:'moire-patterns',title:'Moiré Patterns',description:'Interference patterns',category:'optical',tags:['moiré','optical'],path:'experiments/optical-illusions/moire-patterns/index.html',new:true},
+  {id:'impossible-objects',title:'Impossible Objects',description:'Escher-inspired illusions',category:'optical',tags:['illusion','impossible'],path:'experiments/optical-illusions/impossible-objects/index.html',new:true},
+  {id:'motion-aftereffect',title:'Motion Aftereffect',description:'Stare and see movement',category:'optical',tags:['aftereffect','illusion'],path:'experiments/optical-illusions/motion-aftereffect/index.html',new:true},
+  {id:'chromatic-aberration',title:'Chromatic Aberration',description:'RGB split effects',category:'optical',tags:['chromatic','color'],path:'experiments/optical-illusions/chromatic-aberration/index.html',new:true},
+  {id:'perspective-playground',title:'Perspective Playground',description:'Forced perspective',category:'optical',tags:['perspective','3D'],path:'experiments/optical-illusions/perspective-playground/index.html',new:true},
 
-      // Playful/Whimsical (2 experiments)
-      {
-        id: 'digital-zen-garden',
-        title: 'Digital Zen Garden',
-        description: 'Rake peaceful patterns in virtual sand. Meditative and calming.',
-        category: 'playful',
-        tags: ['calming', 'creative', 'relaxing'],
-        path: 'experiments/playful/digital-zen-garden/index.html',
-        new: true
-      },
-      {
-        id: 'bubble-wrap-infinite',
-        title: 'Bubble Wrap Infinite',
-        description: 'Pop bubbles forever. The most satisfying waste of time on the internet.',
-        category: 'playful',
-        tags: ['satisfying', 'simple', 'addictive'],
-        path: 'experiments/playful/bubble-wrap-infinite/index.html',
-        new: true
-      }
-    ];
+  // Playful/Whimsical (5)
+  {id:'digital-zen-garden',title:'Digital Zen Garden',description:'Rake sand patterns',category:'playful',tags:['zen','meditative'],path:'experiments/playful/digital-zen-garden/index.html',new:true},
+  {id:'bubble-wrap-infinite',title:'Bubble Wrap Infinite',description:'Pop bubbles forever',category:'playful',tags:['satisfying','addictive'],path:'experiments/playful/bubble-wrap-infinite/index.html',new:true},
+  {id:'cloud-maker',title:'Cloud Maker',description:'Paint fluffy clouds',category:'playful',tags:['clouds','creative'],path:'experiments/playful/cloud-maker/index.html',new:true},
+  {id:'star-constellation',title:'Star Constellation Creator',description:'Connect dots, name them',category:'playful',tags:['stars','creative'],path:'experiments/playful/star-constellation/index.html',new:true},
+  {id:'paper-airplane',title:'Paper Airplane Designer',description:'Fold and throw',category:'playful',tags:['paper','flying'],path:'experiments/playful/paper-airplane/index.html',new:true}
+];
 
     // ============================================
     // STATE

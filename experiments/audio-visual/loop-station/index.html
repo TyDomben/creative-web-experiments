@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>EXPERIMENT_TITLE</title><link rel="stylesheet" href="../../../shared/styles.css">
+<style>body{margin:0;overflow:hidden;background:#000}</style></head><body>
+<div class="instructions-overlay" id="instructions"><h1>🎵 EXPERIMENT_TITLE</h1><p>Audio-visual experiment. Interact to create sound and visuals.</p><button class="btn btn-primary" onclick="hideInstructions()">Start</button></div>
+<canvas id="canvas"></canvas>
+<div class="controls-panel"><button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button></div>
+<script src="../../../shared/utils.js"></script>
+<script>
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+let w,h,audioCtx,osc,gain;
+function init(){w=window.innerWidth;h=window.innerHeight;canvas.width=w;canvas.height=h;
+canvas.addEventListener('click',e=>{if(!audioCtx){audioCtx=new AudioContext();osc=audioCtx.createOscillator();
+gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);osc.start()}});animate()}
+function animate(){ctx.fillStyle='rgba(0,0,0,0.1)';ctx.fillRect(0,0,w,h);
+if(audioCtx){const freq=100+Math.random()*500;if(osc)osc.frequency.value=freq;
+const hue=(freq/600)*360;ctx.fillStyle=`hsl(${hue},70%,50%)`;
+ctx.beginPath();ctx.arc(w/2+Math.cos(Date.now()/1000)*100,h/2+Math.sin(Date.now()/1000)*100,20,0,Math.PI*2);ctx.fill()}
+requestAnimationFrame(animate)}
+function hideInstructions(){document.getElementById('instructions').classList.add('hidden')}
+window.addEventListener('load',init)
+</script></body></html>

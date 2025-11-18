@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Paint Drips | Creative Web Experiments</title>
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: #fff; }
+  </style>
+</head>
+<body>
+  <div class="instructions-overlay" id="instructions">
+    <h1>🎨 Digital Paint Drips</h1>
+    <p>Create mesmerizing fluid simulations. Watch digital paint drip, flow, and mix using particle-based fluid dynamics.</p>
+    <h3>Controls:</h3>
+    <ul>
+      <li>Click and drag to paint</li>
+      <li>1-7 keys for colors</li>
+      <li>G to toggle gravity</li>
+      <li>Space to clear</li>
+    </ul>
+    <button class="btn btn-primary" onclick="hideInstructions()">Start Painting</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="clearCanvas()">🗑️</button>
+    <button class="btn btn-icon" onclick="toggleGravity()">⬇️</button>
+    <button class="btn btn-icon" onclick="saveImage()">⬇</button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    let particles = [];
+    let mouseX = 0, mouseY = 0, mousePressed = false;
+    let hasGravity = true;
+    const colors = ['#FF6B9D', '#C44569', '#00D2FF', '#3A7BD5', '#7F00FF', '#E100FF', '#FFD93D'];
+    let currentColorIndex = 0;
+
+    class Drip {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = Utils.random(-0.5, 0.5);
+        this.vy = Utils.random(-1, 1);
+        this.size = Utils.random(2, 6);
+        this.color = color;
+        this.life = 1;
+      }
+
+      update() {
+        if (hasGravity) this.vy += 0.15;
+
+        this.vx *= 0.99;
+        this.vy *= 0.995;
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.y > height) {
+          this.y = height;
+          this.vy = 0;
+          this.vx *= 0.5;
+        }
+
+        if (this.x < 0 || this.x > width) {
+          this.vx *= -0.5;
+          this.x = Utils.constrain(this.x, 0, width);
+        }
+
+        this.life -= 0.001;
+      }
+
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+      animate();
+    }
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', resizeCanvas);
+
+      canvas.addEventListener('mousedown', () => { mousePressed = true; });
+      canvas.addEventListener('mouseup', () => { mousePressed = false; });
+      canvas.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        mousePressed = true;
+        const touch = e.touches[0];
+        mouseX = touch.clientX;
+        mouseY = touch.clientY;
+      });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        mouseX = touch.clientX;
+        mouseY = touch.clientY;
+      });
+
+      canvas.addEventListener('touchend', () => { mousePressed = false; });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ') { e.preventDefault(); clearCanvas(); }
+        if (e.key === 'g') toggleGravity();
+        if (e.key === 's') { e.preventDefault(); saveImage(); }
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 7) currentColorIndex = num - 1;
+      });
+    }
+
+    function animate() {
+      if (mousePressed) {
+        for (let i = 0; i < 5; i++) {
+          particles.push(new Drip(mouseX, mouseY, colors[currentColorIndex]));
+        }
+      }
+
+      particles = particles.filter(p => p.life > 0);
+
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    function clearCanvas() {
+      particles = [];
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    function toggleGravity() { hasGravity = !hasGravity; }
+    function saveImage() { Canvas.download(canvas, 'paint-drips.png'); }
+    function hideInstructions() { document.getElementById('instructions').classList.add('hidden'); }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

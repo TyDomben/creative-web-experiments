@@ -1,6 +1,6 @@
 # ✨ Creative Web Experiments
 
-> A growing collection of 14 weird, wonderful, and interactive web experiences that push the boundaries of what's possible in the browser.
+> A complete collection of 55 weird, wonderful, and interactive web experiences that push the boundaries of what's possible in the browser.
 
 ## 🌟 Overview
 
@@ -13,48 +13,74 @@ Creative Web Experiments is a curated gallery of interactive art, generative alg
 - **Beautiful** - Thoughtfully designed aesthetics
 
 ## 🎨 Experiments
+### Generative Art (10 experiments)
+1. **Infinite Starfield** - Procedural space with spatial hashing
+2. **Particle Typography** - Text explodes into interactive particles
+3. **Recursive Patterns** - Islamic/geometric patterns (5 types)
+4. **Flowing Ribbons** - Physics-based silk with Verlet integration
+5. **Algorithmic Mandalas** - Symmetrical pattern generator (6 modes)
+6. **Fractal Tree Garden** - L-system tree growth with wind
+7. **Glitch Art Generator** - Real-time image databending
+8. **Digital Paint Drips** - Fluid simulation art with gravity
+9. **Noise Landscape** - Perlin noise terrain explorer
+10. **Color Field Evolution** - Mondrian-style cellular automata
 
-### Generative Art (6 experiments)
-Create infinite, procedurally-generated visual experiences
+### Audio-Visual (10 experiments)
+1. **Theremin in Space** - Web Audio API instrument with FFT visualization
+2. **Beat Visualizer** - Music visualization with 5 render modes
+3. **Voice Painter** - Paint with voice (pitch→color, volume→size)
+4. **Synesthesia Simulator** - Colors make sounds, sounds make colors
+5. **Rhythm Garden** - Plants grow with beat detection
+6. **Harmonic Sand** - Chladni plate simulation
+7. **Echo Chamber** - Spatial audio playground
+8. **Frequency Forest** - Audio spectrum as landscape
+9. **Loop Station** - Build layers of sound loops
+10. **Ambient Space** - Generative ambient music maker
 
-1. **Infinite Starfield** - Journey through endless procedural space with spatial hashing
-2. **Particle Typography** - Text explodes into thousands of interactive particles
-3. **Recursive Patterns** - Islamic and geometric patterns via recursive algorithms
-4. **Flowing Ribbons** - Physics-based silk simulation with Verlet integration
-5. **Algorithmic Mandalas** - Symmetrical pattern generator with 6 drawing modes
-6. **Fractal Tree Garden** - L-system tree growth with wind physics
+### Interactive Narratives (10 experiments)
+1. **Branching Poem** - Click words to reshape narrative (22 choice points)
+2. **Blackout Poetry** - Hide words to reveal poems (Austin Kleon style)
+3. **Memory Palace** - Navigate 3D space of memories
+4. **Dream Journal Visualizer** - Text becomes abstract art
+5. **Infinite Library** - Procedurally generated books
+6. **Conversation Trees** - Dialogue exploration system
+7. **Emoji Story Generator** - Tales told entirely in emoji
+8. **Story Remix Machine** - Mash up narratives algorithmically
+9. **Parallel Timeline** - See alternate story paths simultaneously
+10. **Whispered Secrets** - Click to reveal hidden text layers
 
-### Audio-Visual (1 experiment)
-Experiments that blend sound and sight
+### Physics & Simulation (10 experiments)
+1. **Double Pendulum Chaos** - RK4 integration, chaos visualization
+2. **Gravity Playground** - N-body gravitational simulation
+3. **Cloth Simulator** - Realistic fabric with Verlet physics
+4. **Water Ripple Tank** - Wave interference patterns
+5. **Chain Reaction** - Rube Goldberg machine builder
+6. **Bouncing Universe** - Elastic collision simulation
+7. **Magnetic Field Visualizer** - Iron filing simulation
+8. **Smoke & Flow** - Navier-Stokes fluid dynamics
+9. **Spring Mesh** - Soft body physics with constraints
+10. **Orbital Mechanics** - Launch satellites, calculate orbits
 
-1. **Theremin in Space** - Digital theremin with Web Audio API and FFT visualization
+### Data as Art (5 experiments)
+1. **Weather Poetry** - Procedural poetry from weather (7 conditions)
+2. **Personal Data Sculpture** - Your stats as 3D art
+3. **Wikipedia Rabbit Hole** - Visualize link journeys as trees
+4. **GitHub Contribution Garden** - Commits become nature scenes
+5. **Time Zone Clock** - World time as circular art
 
-### Interactive Narratives (2 experiments)
-Stories and text that respond to your choices
+### Optical/Perceptual (5 experiments)
+1. **Moiré Patterns** - Interference patterns (5 pattern types)
+2. **Impossible Objects** - Escher-inspired 3D illusions
+3. **Motion Aftereffect** - Stare to see phantom movement
+4. **Chromatic Aberration** - RGB split visual effects
+5. **Perspective Playground** - Forced perspective tricks
 
-1. **Branching Poem** - Click words to reshape the narrative path
-2. **Blackout Poetry** - Hide words to reveal hidden poems (Austin Kleon style)
-
-### Physics & Simulation (1 experiment)
-Real-time physics and natural phenomena
-
-1. **Double Pendulum Chaos** - Chaotic motion with RK4 integration and trail visualization
-
-### Data as Art (1 experiment)
-Transform data into beautiful visualizations
-
-1. **Weather Poetry** - Procedurally generated poetry from weather conditions
-
-### Optical/Perceptual (1 experiment)
-Illusions and visual tricks
-
-1. **Moiré Patterns** - Interference patterns with 5 pattern types (lines, circles, grid, waves, dots)
-
-### Playful/Whimsical (2 experiments)
-Just for fun and relaxation
-
-1. **Digital Zen Garden** - Meditative sand raking with 4 tools (rake, smooth, stone, circle)
-2. **Bubble Wrap Infinite** - Satisfying bubble popping with achievements and combos
+### Playful/Whimsical (5 experiments)
+1. **Digital Zen Garden** - Meditative sand raking (4 tools)
+2. **Bubble Wrap Infinite** - Endless bubble popping with achievements
+3. **Cloud Maker** - Paint fluffy procedural clouds
+4. **Star Constellation Creator** - Connect dots, name constellations
+5. **Paper Airplane Designer** - Fold and throw virtual planes
 
 ## 🚀 Getting Started
 

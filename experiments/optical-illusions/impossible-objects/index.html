@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>OPTICAL_EXP</title><link rel="stylesheet" href="../../../shared/styles.css">
+<style>body{margin:0;overflow:hidden;background:#000}</style></head><body>
+<div class="instructions-overlay" id="instructions"><h1>👁️ Optical Illusion</h1><p>Experience mind-bending visual effects. Stare at the center to see the illusion.</p>
+<button class="btn btn-primary" onclick="hideInstructions()">View Illusion</button></div>
+<canvas id="canvas"></canvas>
+<div class="controls-panel"><button class="btn btn-icon" onclick="changePattern()">🔄</button><button class="btn btn-icon" onclick="saveImage()">⬇</button>
+<button class="btn" onclick="window.location.href='../../../index.html'">← Gallery</button></div>
+<script src="../../../shared/utils.js"></script>
+<script>
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+let w,h,pattern=0,rotation=0;
+
+function init(){w=window.innerWidth;h=window.innerHeight;canvas.width=w;canvas.height=h;animate()}
+
+function animate(){ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
+ctx.save();ctx.translate(w/2,h/2);ctx.rotate(rotation);
+
+switch(pattern){
+case 0:for(let i=0;i<20;i++){ctx.strokeStyle=i%2===0?'#fff':'#000';ctx.lineWidth=10;
+ctx.beginPath();ctx.arc(0,0,i*30,0,Math.PI*2);ctx.stroke()}break;
+case 1:for(let i=0;i<12;i++){ctx.save();ctx.rotate(i*Math.PI/6);
+ctx.fillStyle=i%2===0?'#ff0':'#f0f';ctx.fillRect(-10,-200,20,400);ctx.restore()}break;
+case 2:ctx.fillStyle='#fff';for(let x=-10;x<10;x++)for(let y=-10;y<10;y++){
+if((x+y)%2===0)ctx.fillRect(x*40,y*40,40,40)}break}
+
+ctx.restore();rotation+=0.005;requestAnimationFrame(animate)}
+
+function changePattern(){pattern=(pattern+1)%3}
+function saveImage(){Canvas.download(canvas,'optical-illusion.png')}
+function hideInstructions(){document.getElementById('instructions').classList.add('hidden')}
+window.addEventListener('load',init)
+</script></body></html>
