@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creative Web Experiments - Interactive Art & Code</title>
+  <meta name="description" content="A collection of 55+ creative web experiments exploring generative art, audio-visual experiences, physics simulations, and more.">
+  <link rel="stylesheet" href="shared/styles.css">
+  <style>
+    /* Gallery Specific Styles */
+    .header {
+      text-align: center;
+      padding: 4rem 2rem 2rem;
+      background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+      border-bottom: 1px solid var(--bg-light);
+    }
+
+    .header h1 {
+      font-size: 3rem;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      font-weight: 800;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .filters {
+      padding: 2rem;
+      background: var(--bg-medium);
+      border-bottom: 1px solid var(--bg-light);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .filter-group {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      max-width: 400px;
+      padding: 0.75rem 1rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--bg-light);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .filter-btn {
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--bg-light);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-size: 0.9rem;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--primary-color);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+
+    .filter-btn.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    .gallery {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .experiment-card {
+      background: var(--bg-medium);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--bg-light);
+      transition: all var(--transition-medium);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .experiment-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary-color);
+    }
+
+    .experiment-preview {
+      width: 100%;
+      height: 200px;
+      background: var(--bg-dark);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .experiment-preview canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .experiment-info {
+      padding: 1.5rem;
+    }
+
+    .experiment-title {
+      font-size: 1.2rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .experiment-description {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .experiment-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .tag {
+      padding: 0.25rem 0.75rem;
+      background: var(--bg-dark);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border: 1px solid var(--bg-light);
+    }
+
+    .tag.new {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .stats {
+      text-align: center;
+      padding: 2rem;
+      background: var(--bg-medium);
+      border-top: 1px solid var(--bg-light);
+    }
+
+    .stats-grid {
+      max-width: 800px;
+      margin: 2rem auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 2rem;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: var(--bg-dark);
+      border-top: 1px solid var(--bg-light);
+      color: var(--text-secondary);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .footer-links a {
+      color: var(--primary-color);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+
+    .footer-links a:hover {
+      color: var(--accent-color);
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .experiment-card:hover .experiment-preview {
+      animation: float 2s ease-in-out infinite;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .header p {
+        font-size: 1rem;
+      }
+
+      .gallery {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 1.5rem;
+      }
+
+      .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-box {
+        max-width: 100%;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .stat-number {
+        font-size: 2rem;
+      }
+    }
+
+    /* Loading Animation */
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--bg-light);
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 2rem auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <h1>✨ Creative Web Experiments</h1>
+    <p>
+      Weird, wonderful, and interactive experiences that push the boundaries of web technology.
+      Explore 55+ experiments in generative art, audio-visual synthesis, physics simulation, and more.
+    </p>
+    <div style="margin-top: 2rem;">
+      <button class="btn btn-primary" onclick="randomExperiment()">
+        🎲 Random Experiment
+      </button>
+      <button class="btn" onclick="window.location.href='#featured'">
+        ⭐ Featured
+      </button>
+    </div>
+  </header>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-group">
+      <input
+        type="text"
+        class="search-box"
+        placeholder="🔍 Search experiments..."
+        id="search"
+        oninput="filterExperiments()"
+      >
+
+      <button class="filter-btn active" data-category="all" onclick="setCategory('all')">
+        All
+      </button>
+      <button class="filter-btn" data-category="generative-art" onclick="setCategory('generative-art')">
+        Generative Art
+      </button>
+      <button class="filter-btn" data-category="audio-visual" onclick="setCategory('audio-visual')">
+        Audio-Visual
+      </button>
+      <button class="filter-btn" data-category="narratives" onclick="setCategory('narratives')">
+        Narratives
+      </button>
+      <button class="filter-btn" data-category="physics" onclick="setCategory('physics')">
+        Physics
+      </button>
+      <button class="filter-btn" data-category="data-art" onclick="setCategory('data-art')">
+        Data Art
+      </button>
+      <button class="filter-btn" data-category="optical" onclick="setCategory('optical')">
+        Optical
+      </button>
+      <button class="filter-btn" data-category="playful" onclick="setCategory('playful')">
+        Playful
+      </button>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div class="gallery" id="gallery">
+    <!-- Experiments will be loaded here -->
+  </div>
+
+  <!-- No Results -->
+  <div class="no-results hidden" id="no-results">
+    <h2>No experiments found</h2>
+    <p>Try a different search term or category</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <h2>By the Numbers</h2>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-number" id="total-experiments">0</div>
+        <div class="stat-label">Experiments</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">7</div>
+        <div class="stat-label">Categories</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">Open Source</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">∞</div>
+        <div class="stat-label">Possibilities</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; 2025 Creative Web Experiments - A collection of interactive art and code</p>
+    <div class="footer-links">
+      <a href="docs/about.html">About</a>
+      <a href="docs/creating-experiments.html">Create Experiment</a>
+      <a href="docs/technical-guide.html">Technical Guide</a>
+      <a href="https://github.com/yourusername/creative-web-experiments">GitHub</a>
+    </div>
+    <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-muted);">
+      Made with ❤️ for the weird and wonderful web
+    </p>
+  </footer>
+
+  <script src="shared/utils.js"></script>
+  <script>
+    // ============================================
+    // EXPERIMENT DATA
+    // ============================================
+
+    const experiments = [
+      // Generative Art
+      {
+        id: 'infinite-starfield',
+        title: 'Infinite Starfield',
+        description: 'Journey through an endless procedural cosmos. Zoom in and out to reveal infinite detail.',
+        category: 'generative-art',
+        tags: ['procedural', 'space', 'calming'],
+        path: 'experiments/generative-art/infinite-starfield/index.html',
+        new: true
+      },
+      {
+        id: 'recursive-patterns',
+        title: 'Recursive Patterns',
+        description: 'Create mesmerizing Islamic and geometric patterns through recursive algorithms.',
+        category: 'generative-art',
+        tags: ['geometric', 'mathematical', 'beautiful'],
+        path: 'experiments/generative-art/recursive-patterns/index.html',
+        new: true
+      },
+      {
+        id: 'particle-typography',
+        title: 'Particle Typography',
+        description: 'Watch your words come alive as thousands of particles dance and reform.',
+        category: 'generative-art',
+        tags: ['particles', 'text', 'interactive'],
+        path: 'experiments/generative-art/particle-typography/index.html',
+        new: true
+      },
+
+      // Audio-Visual
+      {
+        id: 'theremin-space',
+        title: 'Theremin in Space',
+        description: 'Control ethereal sounds with your mouse position. A digital theremin meets cosmic visuals.',
+        category: 'audio-visual',
+        tags: ['sound', 'interactive', 'musical'],
+        path: 'experiments/audio-visual/theremin-space/index.html',
+        new: true
+      },
+      {
+        id: 'beat-visualizer',
+        title: 'Beat Visualizer',
+        description: 'Upload your music and watch it transform into dancing visual frequencies.',
+        category: 'audio-visual',
+        tags: ['music', 'visualization', 'energetic'],
+        path: 'experiments/audio-visual/beat-visualizer/index.html',
+        new: true
+      },
+      {
+        id: 'voice-painter',
+        title: 'Voice Painter',
+        description: 'Paint with your voice. Pitch controls color, volume controls brush size.',
+        category: 'audio-visual',
+        tags: ['voice', 'creative', 'unique'],
+        path: 'experiments/audio-visual/voice-painter/index.html',
+        new: true
+      },
+
+      // Interactive Narratives
+      {
+        id: 'branching-poem',
+        title: 'Branching Poem',
+        description: 'Click words to reshape the narrative. Every choice creates a new story.',
+        category: 'narratives',
+        tags: ['text', 'interactive', 'storytelling'],
+        path: 'experiments/interactive-narratives/branching-poem/index.html',
+        new: true
+      },
+      {
+        id: 'blackout-poetry',
+        title: 'Blackout Poetry Tool',
+        description: 'Hide words to reveal hidden poems. A digital take on newspaper blackout poetry.',
+        category: 'narratives',
+        tags: ['poetry', 'creative', 'minimalist'],
+        path: 'experiments/interactive-narratives/blackout-poetry/index.html',
+        new: true
+      },
+
+      // Physics & Simulation
+      {
+        id: 'gravity-playground',
+        title: 'Gravity Playground',
+        description: 'Place planets and watch gravitational orbits emerge. Newton would be proud.',
+        category: 'physics',
+        tags: ['physics', 'simulation', 'educational'],
+        path: 'experiments/physics-simulation/gravity-playground/index.html',
+        new: true
+      },
+      {
+        id: 'cloth-simulator',
+        title: 'Cloth Simulator',
+        description: 'Tear, stretch, and manipulate realistic fabric physics in real-time.',
+        category: 'physics',
+        tags: ['physics', 'interactive', 'satisfying'],
+        path: 'experiments/physics-simulation/cloth-simulator/index.html',
+        new: true
+      },
+      {
+        id: 'double-pendulum',
+        title: 'Double Pendulum Chaos',
+        description: 'Watch chaos theory in action. Tiny changes lead to wildly different outcomes.',
+        category: 'physics',
+        tags: ['chaos', 'physics', 'mesmerizing'],
+        path: 'experiments/physics-simulation/double-pendulum/index.html',
+        new: true
+      },
+
+      // Data as Art
+      {
+        id: 'wikipedia-rabbit-hole',
+        title: 'Wikipedia Rabbit Hole',
+        description: 'Visualize your journey through Wikipedia links as a beautiful tree structure.',
+        category: 'data-art',
+        tags: ['data', 'visualization', 'exploratory'],
+        path: 'experiments/data-as-art/wikipedia-rabbit-hole/index.html',
+        new: true
+      },
+      {
+        id: 'weather-poetry',
+        title: 'Weather Poetry',
+        description: 'Current weather becomes procedural poetry. Rain, sun, and wind as verse.',
+        category: 'data-art',
+        tags: ['data', 'poetry', 'generative'],
+        path: 'experiments/data-as-art/weather-poetry/index.html',
+        new: true
+      },
+
+      // Optical/Perceptual
+      {
+        id: 'impossible-objects',
+        title: 'Impossible Objects',
+        description: 'Escher-inspired 3D illusions that trick your perception.',
+        category: 'optical',
+        tags: ['illusion', '3d', 'mind-bending'],
+        path: 'experiments/optical-illusions/impossible-objects/index.html',
+        new: true
+      },
+      {
+        id: 'moire-patterns',
+        title: 'Moiré Pattern Generator',
+        description: 'Create hypnotic interference patterns through overlapping geometries.',
+        category: 'optical',
+        tags: ['patterns', 'optical', 'mesmerizing'],
+        path: 'experiments/optical-illusions/moire-patterns/index.html',
+        new: true
+      },
+
+      // Playful/Whimsical
+      {
+        id: 'digital-zen-garden',
+        title: 'Digital Zen Garden',
+        description: 'Rake peaceful patterns in virtual sand. Meditative and calming.',
+        category: 'playful',
+        tags: ['calming', 'creative', 'relaxing'],
+        path: 'experiments/playful/digital-zen-garden/index.html',
+        new: true
+      },
+      {
+        id: 'bubble-wrap-infinite',
+        title: 'Bubble Wrap Infinite',
+        description: 'Pop bubbles forever. The most satisfying waste of time on the internet.',
+        category: 'playful',
+        tags: ['satisfying', 'simple', 'addictive'],
+        path: 'experiments/playful/bubble-wrap-infinite/index.html',
+        new: true
+      },
+    ];
+
+    // ============================================
+    // STATE
+    // ============================================
+
+    let currentCategory = 'all';
+    let searchTerm = '';
+
+    // ============================================
+    // RENDERING
+    // ============================================
+
+    function renderExperiments() {
+      const gallery = document.getElementById('gallery');
+      const noResults = document.getElementById('no-results');
+
+      const filtered = experiments.filter(exp => {
+        const matchesCategory = currentCategory === 'all' || exp.category === currentCategory;
+        const matchesSearch = searchTerm === '' ||
+          exp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          exp.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        gallery.classList.add('hidden');
+        noResults.classList.remove('hidden');
+        return;
+      }
+
+      gallery.classList.remove('hidden');
+      noResults.classList.add('hidden');
+
+      gallery.innerHTML = filtered.map(exp => `
+        <div class="experiment-card" onclick="window.location.href='${exp.path}'">
+          <div class="experiment-preview">
+            <canvas id="preview-${exp.id}" width="400" height="300"></canvas>
+          </div>
+          <div class="experiment-info">
+            <div class="experiment-title">${exp.title}</div>
+            <div class="experiment-description">${exp.description}</div>
+            <div class="experiment-tags">
+              ${exp.new ? '<span class="tag new">NEW</span>' : ''}
+              ${exp.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Animate previews
+      setTimeout(animatePreviews, 100);
+    }
+
+    // ============================================
+    // PREVIEW ANIMATIONS
+    // ============================================
+
+    function animatePreviews() {
+      experiments.forEach(exp => {
+        const canvas = document.getElementById(`preview-${exp.id}`);
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        // Simple animation based on category
+        switch(exp.category) {
+          case 'generative-art':
+            animateGenerativePreview(ctx, w, h, exp.id);
+            break;
+          case 'audio-visual':
+            animateAudioPreview(ctx, w, h, exp.id);
+            break;
+          case 'physics':
+            animatePhysicsPreview(ctx, w, h, exp.id);
+            break;
+          default:
+            animateDefaultPreview(ctx, w, h, exp.id);
+        }
+      });
+    }
+
+    function animateGenerativePreview(ctx, w, h, id) {
+      let angle = 0;
+      function draw() {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 2;
+
+        for (let i = 0; i < 5; i++) {
+          ctx.save();
+          ctx.translate(w/2, h/2);
+          ctx.rotate(angle + i * Math.PI / 2.5);
+          ctx.beginPath();
+          ctx.arc(0, 0, 50 + i * 20, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        angle += 0.01;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function animateAudioPreview(ctx, w, h, id) {
+      let offset = 0;
+      function draw() {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = '#ec4899';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+
+        for (let x = 0; x < w; x += 5) {
+          const y = h/2 + Math.sin((x + offset) * 0.02) * 50;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+
+        ctx.stroke();
+        offset += 2;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function animatePhysicsPreview(ctx, w, h, id) {
+      let t = 0;
+      function draw() {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.1)';
+        ctx.fillRect(0, 0, w, h);
+
+        const x = w/2 + Math.cos(t) * 100;
+        const y = h/2 + Math.sin(t * 2) * 80;
+
+        ctx.fillStyle = '#14b8a6';
+        ctx.beginPath();
+        ctx.arc(x, y, 15, 0, Math.PI * 2);
+        ctx.fill();
+
+        t += 0.02;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function animateDefaultPreview(ctx, w, h, id) {
+      let hue = 0;
+      function draw() {
+        ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+        ctx.fillRect(0, 0, w, h);
+
+        hue = (hue + 1) % 360;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // ============================================
+    // FILTERING
+    // ============================================
+
+    function setCategory(category) {
+      currentCategory = category;
+
+      // Update button states
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`[data-category="${category}"]`).classList.add('active');
+
+      renderExperiments();
+    }
+
+    function filterExperiments() {
+      searchTerm = document.getElementById('search').value;
+      renderExperiments();
+    }
+
+    function randomExperiment() {
+      const random = experiments[Math.floor(Math.random() * experiments.length)];
+      window.location.href = random.path;
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    window.addEventListener('load', () => {
+      document.getElementById('total-experiments').textContent = experiments.length;
+      renderExperiments();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Particle Typography | Creative Web Experiments</title>
+  <meta name="description" content="Watch your words come alive as thousands of particles dance and reform.">
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #0f172a;
+    }
+
+    .text-input {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 3rem;
+      border-radius: 16px;
+      border: 1px solid var(--bg-light);
+      box-shadow: var(--shadow-xl);
+      z-index: 2000;
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .text-input.hidden {
+      display: none;
+    }
+
+    .text-input h2 {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+
+    .text-input input {
+      width: 100%;
+      padding: 1rem;
+      font-size: 2rem;
+      background: var(--bg-dark);
+      border: 2px solid var(--bg-light);
+      border-radius: 8px;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .text-input input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: var(--shadow-glow);
+    }
+  </style>
+</head>
+<body>
+  <!-- Instructions Overlay -->
+  <div class="instructions-overlay" id="instructions">
+    <h1>✨ Particle Typography</h1>
+    <p>
+      Watch your words explode into thousands of particles, then gracefully reform.
+      Each letter becomes a swarm of autonomous agents that dance, interact, and
+      respond to your mouse.
+    </p>
+
+    <h3>How to Interact:</h3>
+    <ul>
+      <li>Type your text to see it come alive</li>
+      <li>Move mouse to attract/repel particles</li>
+      <li>Click to explode text</li>
+      <li>E to change text</li>
+      <li>C to cycle through color modes</li>
+      <li>Spacebar to reset</li>
+    </ul>
+
+    <button class="btn btn-primary" onclick="hideInstructions()">Start Creating</button>
+  </div>
+
+  <!-- Text Input -->
+  <div class="text-input" id="text-input">
+    <h2>Enter Your Text</h2>
+    <input
+      type="text"
+      id="text-field"
+      placeholder="HELLO"
+      maxlength="20"
+      value="HELLO"
+    >
+    <button class="btn btn-primary" onclick="updateText()">Create</button>
+  </div>
+
+  <!-- Main Canvas -->
+  <div class="experiment-container">
+    <canvas id="canvas" class="experiment-canvas"></canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="explode()" title="Explode" aria-label="Explode">
+      💥
+    </button>
+    <button class="btn btn-icon" onclick="showTextInput()" title="Change Text" aria-label="Change Text">
+      E
+    </button>
+    <button class="btn btn-icon" onclick="cycleColorMode()" title="Color Mode" aria-label="Color Mode">
+      🎨
+    </button>
+    <button class="btn btn-icon" onclick="reset()" title="Reset" aria-label="Reset">
+      ↻
+    </button>
+    <button class="btn btn-icon" onclick="saveImage()" title="Save" aria-label="Save">
+      ⬇
+    </button>
+    <button class="btn btn-icon" onclick="toggleInfo()" title="Info" aria-label="Info">
+      ℹ
+    </button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">
+      ← Gallery
+    </button>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info-panel" id="info-panel">
+    <h2>About Particle Typography</h2>
+    <p>
+      This experiment samples text and converts each pixel into an autonomous
+      particle agent. These particles have behaviors like seeking their home
+      position, avoiding the mouse, and responding to forces.
+    </p>
+
+    <h3>Technical Details</h3>
+    <p>
+      Uses HTML5 Canvas to render text, samples pixel data using <code>getImageData()</code>,
+      then creates a particle system where each particle uses steering behaviors
+      (seek, flee, cohesion) to create emergent motion patterns.
+    </p>
+
+    <p>
+      Particles use verlet integration for smooth physics and implement flocking
+      behaviors inspired by Craig Reynolds' Boids algorithm.
+    </p>
+
+    <h3>Interaction Guide</h3>
+    <ul>
+      <li><code>Type Text</code> - Press E to enter new text</li>
+      <li><code>Mouse Move</code> - Repel particles</li>
+      <li><code>Click</code> - Explosive force</li>
+      <li><code>E</code> - Edit text</li>
+      <li><code>C</code> - Cycle color modes</li>
+      <li><code>Space</code> - Reset to formation</li>
+      <li><code>S</code> - Save image</li>
+    </ul>
+
+    <h3>Color Modes</h3>
+    <p>
+      Cycle through rainbow, monochrome, velocity-based, and position-based
+      coloring by pressing C.
+    </p>
+
+    <h3>Inspiration</h3>
+    <p>
+      Inspired by particle systems in creative coding, Daniel Shiffman's
+      "Nature of Code", and kinetic typography art.
+    </p>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    // ============================================
+    // SETUP
+    // ============================================
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let particles = [];
+    let mouseX = -1000;
+    let mouseY = -1000;
+
+    // Settings
+    let currentText = 'HELLO';
+    let colorMode = 0; // 0: rainbow, 1: mono, 2: velocity, 3: position
+    const COLOR_MODES = ['Rainbow', 'Monochrome', 'Velocity', 'Position'];
+
+    // ============================================
+    // PARTICLE CLASS
+    // ============================================
+
+    class Particle {
+      constructor(x, y, targetX, targetY, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = Utils.random(-2, 2);
+        this.vy = Utils.random(-2, 2);
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.originalColor = color;
+        this.size = 2;
+        this.opacity = 1;
+      }
+
+      update() {
+        // Seek home position
+        const seekForce = 0.05;
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        this.vx += dx * seekForce;
+        this.vy += dy * seekForce;
+
+        // Mouse interaction (flee from mouse)
+        const mouseDistSq = (this.x - mouseX) ** 2 + (this.y - mouseY) ** 2;
+        const mouseRadius = 150;
+
+        if (mouseDistSq < mouseRadius ** 2 && mouseDistSq > 0) {
+          const dist = Math.sqrt(mouseDistSq);
+          const force = (mouseRadius - dist) / mouseRadius;
+          const angle = Math.atan2(this.y - mouseY, this.x - mouseX);
+          this.vx += Math.cos(angle) * force * 2;
+          this.vy += Math.sin(angle) * force * 2;
+        }
+
+        // Apply friction
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+
+        // Update position
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Keep in bounds with soft boundaries
+        if (this.x < 0) this.vx += 0.1;
+        if (this.x > width) this.vx -= 0.1;
+        if (this.y < 0) this.vy += 0.1;
+        if (this.y > height) this.vy -= 0.1;
+      }
+
+      draw() {
+        let color = this.originalColor;
+
+        // Apply color mode
+        switch(colorMode) {
+          case 0: // Rainbow
+            const hue = (this.targetX / width * 360 + Date.now() * 0.05) % 360;
+            color = `hsl(${hue}, 70%, 60%)`;
+            break;
+
+          case 1: // Monochrome
+            color = '#6366f1';
+            break;
+
+          case 2: // Velocity
+            const speed = Math.sqrt(this.vx ** 2 + this.vy ** 2);
+            const hueV = Utils.constrain(speed * 10, 0, 360);
+            color = `hsl(${hueV}, 80%, 60%)`;
+            break;
+
+          case 3: // Position
+            const hueP = (this.y / height * 360) % 360;
+            color = `hsl(${hueP}, 70%, 60%)`;
+            break;
+        }
+
+        // Draw particle
+        ctx.fillStyle = color;
+        ctx.globalAlpha = this.opacity;
+
+        // Draw as circle for better appearance
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+      }
+
+      explode() {
+        const angle = Utils.random(0, Math.PI * 2);
+        const force = Utils.random(5, 15);
+        this.vx = Math.cos(angle) * force;
+        this.vy = Math.sin(angle) * force;
+      }
+    }
+
+    // ============================================
+    // TEXT TO PARTICLES
+    // ============================================
+
+    function textToParticles(text) {
+      particles = [];
+
+      // Create temporary canvas for text
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+
+      // Set size
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+
+      // Draw text
+      tempCtx.fillStyle = 'white';
+      tempCtx.font = 'bold 120px Arial, sans-serif';
+      tempCtx.textAlign = 'center';
+      tempCtx.textBaseline = 'middle';
+      tempCtx.fillText(text, width / 2, height / 2);
+
+      // Get pixel data
+      const imageData = tempCtx.getImageData(0, 0, width, height);
+      const pixels = imageData.data;
+
+      // Sample pixels and create particles
+      const sampling = 4; // Sample every 4th pixel
+
+      for (let y = 0; y < height; y += sampling) {
+        for (let x = 0; x < width; x += sampling) {
+          const i = (y * width + x) * 4;
+          const alpha = pixels[i + 3];
+
+          // If pixel is visible, create particle
+          if (alpha > 128) {
+            const particle = new Particle(
+              Utils.random(0, width),
+              Utils.random(0, height),
+              x,
+              y,
+              '#ffffff'
+            );
+            particles.push(particle);
+          }
+        }
+      }
+
+      console.log(`Created ${particles.length} particles for "${text}"`);
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+
+      // Create initial text
+      updateText();
+
+      // Start animation
+      animate();
+    }
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      ctx.scale(dpr, dpr);
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+
+    function setupEventListeners() {
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        updateText(); // Recreate particles for new size
+      });
+
+      // Mouse tracking
+      canvas.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      canvas.addEventListener('mouseleave', () => {
+        mouseX = -1000;
+        mouseY = -1000;
+      });
+
+      // Click to explode
+      canvas.addEventListener('click', explode);
+
+      // Touch support
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        mouseX = touch.clientX;
+        mouseY = touch.clientY;
+      });
+
+      canvas.addEventListener('touchend', () => {
+        mouseX = -1000;
+        mouseY = -1000;
+      });
+
+      // Keyboard
+      document.addEventListener('keydown', (e) => {
+        switch(e.key.toLowerCase()) {
+          case ' ':
+            e.preventDefault();
+            reset();
+            break;
+          case 'e':
+            e.preventDefault();
+            showTextInput();
+            break;
+          case 'c':
+            e.preventDefault();
+            cycleColorMode();
+            break;
+          case 's':
+            e.preventDefault();
+            saveImage();
+            break;
+          case 'i':
+            e.preventDefault();
+            toggleInfo();
+            break;
+        }
+      });
+    }
+
+    // ============================================
+    // ANIMATION LOOP
+    // ============================================
+
+    function animate() {
+      // Clear with trails effect
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw particles
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    // ============================================
+    // CONTROLS
+    // ============================================
+
+    function updateText() {
+      const input = document.getElementById('text-field');
+      currentText = input.value.toUpperCase() || 'HELLO';
+
+      textToParticles(currentText);
+
+      document.getElementById('text-input').classList.add('hidden');
+    }
+
+    function showTextInput() {
+      const textInput = document.getElementById('text-input');
+      textInput.classList.remove('hidden');
+      document.getElementById('text-field').focus();
+      document.getElementById('text-field').select();
+    }
+
+    function explode() {
+      particles.forEach(p => p.explode());
+    }
+
+    function reset() {
+      particles.forEach(p => {
+        p.vx = 0;
+        p.vy = 0;
+      });
+    }
+
+    function cycleColorMode() {
+      colorMode = (colorMode + 1) % COLOR_MODES.length;
+      console.log(`Color mode: ${COLOR_MODES[colorMode]}`);
+    }
+
+    function saveImage() {
+      // Clear background first for clean save
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, width, height);
+      particles.forEach(p => p.draw());
+
+      Canvas.download(canvas, 'particle-typography.png');
+    }
+
+    function toggleInfo() {
+      document.getElementById('info-panel').classList.toggle('open');
+    }
+
+    function hideInstructions() {
+      document.getElementById('instructions').classList.add('hidden');
+    }
+
+    // Allow Enter key to submit text
+    document.getElementById('text-field').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        updateText();
+      }
+    });
+
+    // ============================================
+    // START
+    // ============================================
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

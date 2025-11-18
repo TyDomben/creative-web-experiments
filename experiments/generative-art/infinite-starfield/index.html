@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinite Starfield | Creative Web Experiments</title>
+  <meta name="description" content="Journey through an endless procedural cosmos. Zoom in and out to reveal infinite detail.">
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .speed-display {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 1rem;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+    }
+  </style>
+</head>
+<body>
+  <!-- Instructions Overlay -->
+  <div class="instructions-overlay" id="instructions">
+    <h1>✨ Infinite Starfield</h1>
+    <p>
+      Journey through an endless procedural cosmos. Each star is generated using
+      deterministic randomness, creating an infinite universe that remains consistent
+      no matter how deep you explore.
+    </p>
+
+    <h3>How to Interact:</h3>
+    <ul>
+      <li>Move mouse to change direction</li>
+      <li>Scroll / Mouse wheel to zoom in/out</li>
+      <li>Click to accelerate forward</li>
+      <li>Spacebar to reset position</li>
+      <li>S to save screenshot</li>
+    </ul>
+
+    <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+      💡 Try zooming way in and way out - the universe is truly infinite!
+    </p>
+
+    <button class="btn btn-primary" onclick="hideInstructions()">Begin Journey</button>
+  </div>
+
+  <!-- Main Canvas -->
+  <div class="experiment-container">
+    <canvas id="canvas" class="experiment-canvas"></canvas>
+  </div>
+
+  <!-- Speed Display -->
+  <div class="speed-display">
+    <div>Depth: <span id="depth">1.0x</span></div>
+    <div>Speed: <span id="speed">0</span></div>
+    <div>Stars: <span id="star-count">0</span></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="reset()" title="Reset Position" aria-label="Reset">
+      ↻
+    </button>
+    <button class="btn btn-icon" onclick="saveImage()" title="Save Image" aria-label="Save">
+      ⬇
+    </button>
+    <button class="btn btn-icon" onclick="toggleInfo()" title="Info" aria-label="Info">
+      ℹ
+    </button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">
+      ← Gallery
+    </button>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info-panel" id="info-panel">
+    <h2>About Infinite Starfield</h2>
+    <p>
+      This experiment creates a procedurally generated universe using seeded random
+      number generation. Each "cell" of space generates the same stars every time,
+      allowing for infinite exploration while maintaining consistency.
+    </p>
+
+    <h3>Technical Details</h3>
+    <p>
+      The starfield uses a technique called "spatial hashing" combined with seeded
+      RNG (Random Number Generation). Space is divided into cells, and each cell's
+      seed is based on its coordinates. This ensures that zooming out and back in
+      will always show the same stars.
+    </p>
+
+    <p>
+      Stars are rendered using additive blending to create realistic glow effects.
+      Larger stars have brighter cores with soft halos.
+    </p>
+
+    <h3>Interaction Guide</h3>
+    <ul>
+      <li><code>Mouse Move</code> - Steer through space</li>
+      <li><code>Scroll</code> - Zoom in/out (infinite depth)</li>
+      <li><code>Click</code> - Boost forward</li>
+      <li><code>Spacebar</code> - Reset to starting position</li>
+      <li><code>S</code> - Save screenshot</li>
+      <li><code>I</code> - Toggle this panel</li>
+    </ul>
+
+    <h3>Try This</h3>
+    <p>
+      Zoom in really far, note your position, zoom out completely, then zoom back
+      to the exact same spot - you'll see the exact same stars! This is the magic
+      of deterministic procedural generation.
+    </p>
+
+    <h3>Inspiration</h3>
+    <p>
+      Inspired by space simulations like Universe Sandbox and procedural generation
+      techniques from games like No Man's Sky and Elite Dangerous.
+    </p>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    // ============================================
+    // SETUP
+    // ============================================
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let centerX, centerY;
+
+    // Camera / position state
+    let cameraX = 0;
+    let cameraY = 0;
+    let cameraZ = 1.0; // zoom level (smaller = more zoomed in)
+    let velocityX = 0;
+    let velocityY = 0;
+    let velocityZ = 0;
+
+    // Mouse state
+    let mouseX = 0;
+    let mouseY = 0;
+    let isBoosting = false;
+
+    // Constants
+    const CELL_SIZE = 200; // Size of each space cell
+    const STARS_PER_CELL = 15;
+    const MAX_SPEED = 5;
+    const FRICTION = 0.98;
+
+    // ============================================
+    // STAR GENERATION
+    // ============================================
+
+    class Star {
+      constructor(x, y, z, size, brightness, color) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.size = size;
+        this.brightness = brightness;
+        this.color = color;
+      }
+
+      draw() {
+        // Project 3D position to 2D screen
+        const scale = cameraZ / (cameraZ + this.z);
+        const screenX = (this.x - cameraX) * scale + centerX;
+        const screenY = (this.y - cameraY) * scale + centerY;
+
+        // Don't draw if off screen
+        if (screenX < -100 || screenX > width + 100 ||
+            screenY < -100 || screenY > height + 100) {
+          return;
+        }
+
+        const apparentSize = this.size * scale;
+
+        // Draw glow
+        const gradient = ctx.createRadialGradient(
+          screenX, screenY, 0,
+          screenX, screenY, apparentSize * 3
+        );
+
+        const alpha = this.brightness * Math.min(scale * 2, 1);
+        gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`);
+        gradient.addColorStop(0.3, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha * 0.5})`);
+        gradient.addColorStop(1, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0)`);
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(
+          screenX - apparentSize * 3,
+          screenY - apparentSize * 3,
+          apparentSize * 6,
+          apparentSize * 6
+        );
+
+        // Draw core
+        ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+        ctx.fillRect(
+          screenX - apparentSize / 2,
+          screenY - apparentSize / 2,
+          apparentSize,
+          apparentSize
+        );
+      }
+    }
+
+    function generateStarsForCell(cellX, cellY) {
+      const stars = [];
+      const seed = cellX * 73856093 ^ cellY * 19349663; // Spatial hash
+      const rng = new Utils.SeededRandom(seed);
+
+      const basX = cellX * CELL_SIZE;
+      const baseY = cellY * CELL_SIZE;
+
+      for (let i = 0; i < STARS_PER_CELL; i++) {
+        const x = baseX + rng.range(0, CELL_SIZE);
+        const y = baseY + rng.range(0, CELL_SIZE);
+        const z = rng.range(-1000, 1000);
+        const size = rng.range(1, 4);
+        const brightness = rng.range(0.3, 1.0);
+
+        // Star color variety
+        let color;
+        const colorType = rng.next();
+        if (colorType < 0.7) {
+          // White stars (most common)
+          const v = Math.floor(rng.range(200, 255));
+          color = { r: v, g: v, b: v };
+        } else if (colorType < 0.85) {
+          // Blue stars
+          color = { r: 150, g: 180, b: 255 };
+        } else if (colorType < 0.95) {
+          // Red stars
+          color = { r: 255, g: 150, b: 150 };
+        } else {
+          // Yellow stars
+          color = { r: 255, g: 240, b: 150 };
+        }
+
+        stars.push(new Star(x, y, z, size, brightness, color));
+      }
+
+      return stars;
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+
+      // Start animation
+      animate();
+    }
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 2;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      ctx.scale(dpr, dpr);
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+
+    function setupEventListeners() {
+      window.addEventListener('resize', resizeCanvas);
+
+      // Mouse movement
+      canvas.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX - centerX) / centerX;
+        mouseY = (e.clientY - centerY) / centerY;
+      });
+
+      // Click to boost
+      canvas.addEventListener('mousedown', () => {
+        isBoosting = true;
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        isBoosting = false;
+      });
+
+      // Zoom with scroll
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomSpeed = 0.1;
+        const delta = e.deltaY > 0 ? 1 : -1;
+
+        cameraZ *= (1 + delta * zoomSpeed);
+        cameraZ = Math.max(0.001, Math.min(1000, cameraZ));
+      });
+
+      // Touch support
+      let touchStartDist = 0;
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          touchStartDist = Math.sqrt(dx * dx + dy * dy);
+        } else {
+          isBoosting = true;
+        }
+      });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+
+        if (e.touches.length === 2) {
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          const touchDist = Math.sqrt(dx * dx + dy * dy);
+          const delta = touchDist - touchStartDist;
+
+          cameraZ *= (1 - delta * 0.001);
+          cameraZ = Math.max(0.001, Math.min(1000, cameraZ));
+
+          touchStartDist = touchDist;
+        } else {
+          const touch = e.touches[0];
+          mouseX = (touch.clientX - centerX) / centerX;
+          mouseY = (touch.clientY - centerY) / centerY;
+        }
+      });
+
+      canvas.addEventListener('touchend', () => {
+        isBoosting = false;
+      });
+
+      // Keyboard
+      document.addEventListener('keydown', (e) => {
+        switch(e.key.toLowerCase()) {
+          case ' ':
+            e.preventDefault();
+            reset();
+            break;
+          case 's':
+            e.preventDefault();
+            saveImage();
+            break;
+          case 'i':
+            e.preventDefault();
+            toggleInfo();
+            break;
+        }
+      });
+    }
+
+    // ============================================
+    // ANIMATION LOOP
+    // ============================================
+
+    function animate() {
+      // Update camera velocity based on mouse
+      const steerStrength = 2;
+      velocityX += mouseX * steerStrength * cameraZ * 0.01;
+      velocityY += mouseY * steerStrength * cameraZ * 0.01;
+
+      // Boost forward
+      if (isBoosting) {
+        velocityZ += 0.5;
+      }
+
+      // Apply friction
+      velocityX *= FRICTION;
+      velocityY *= FRICTION;
+      velocityZ *= FRICTION;
+
+      // Limit max speed
+      const speed = Math.sqrt(velocityX ** 2 + velocityY ** 2 + velocityZ ** 2);
+      if (speed > MAX_SPEED) {
+        const scale = MAX_SPEED / speed;
+        velocityX *= scale;
+        velocityY *= scale;
+        velocityZ *= scale;
+      }
+
+      // Update camera position
+      cameraX += velocityX;
+      cameraY += velocityY;
+      cameraZ += velocityZ;
+
+      // Clear canvas
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+
+      // Determine which cells are visible
+      const cellsToRender = getVisibleCells();
+
+      // Generate and draw stars
+      let starCount = 0;
+      cellsToRender.forEach(([cx, cy]) => {
+        const stars = generateStarsForCell(cx, cy);
+        stars.forEach(star => star.draw());
+        starCount += stars.length;
+      });
+
+      // Update UI
+      document.getElementById('depth').textContent = cameraZ.toFixed(2) + 'x';
+      document.getElementById('speed').textContent = speed.toFixed(1);
+      document.getElementById('star-count').textContent = starCount;
+
+      requestAnimationFrame(animate);
+    }
+
+    function getVisibleCells() {
+      const cells = [];
+
+      // Calculate visible range
+      const marginX = width * 0.6 / cameraZ;
+      const marginY = height * 0.6 / cameraZ;
+
+      const minCellX = Math.floor((cameraX - marginX) / CELL_SIZE);
+      const maxCellX = Math.ceil((cameraX + marginX) / CELL_SIZE);
+      const minCellY = Math.floor((cameraY - marginY) / CELL_SIZE);
+      const maxCellY = Math.ceil((cameraY + marginY) / CELL_SIZE);
+
+      for (let cx = minCellX; cx <= maxCellX; cx++) {
+        for (let cy = minCellY; cy <= maxCellY; cy++) {
+          cells.push([cx, cy]);
+        }
+      }
+
+      return cells;
+    }
+
+    // ============================================
+    // CONTROLS
+    // ============================================
+
+    function reset() {
+      cameraX = 0;
+      cameraY = 0;
+      cameraZ = 1.0;
+      velocityX = 0;
+      velocityY = 0;
+      velocityZ = 0;
+      mouseX = 0;
+      mouseY = 0;
+    }
+
+    function saveImage() {
+      Canvas.download(canvas, 'infinite-starfield.png');
+    }
+
+    function toggleInfo() {
+      document.getElementById('info-panel').classList.toggle('open');
+    }
+
+    function hideInstructions() {
+      document.getElementById('instructions').classList.add('hidden');
+    }
+
+    // ============================================
+    // START
+    // ============================================
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

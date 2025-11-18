@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Double Pendulum Chaos | Creative Web Experiments</title>
+  <meta name="description" content="Watch chaos theory in action. Tiny changes lead to wildly different outcomes.">
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #0f172a;
+    }
+
+    .settings-panel {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--bg-light);
+      z-index: 100;
+      min-width: 250px;
+    }
+
+    .settings-panel h3 {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .control-group {
+      margin-bottom: 1rem;
+    }
+
+    .control-group label {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .control-group input[type="range"] {
+      width: 100%;
+    }
+
+    .value-display {
+      color: var(--accent-color);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Instructions Overlay -->
+  <div class="instructions-overlay" id="instructions">
+    <h1>🌀 Double Pendulum Chaos</h1>
+    <p>
+      The double pendulum is one of the simplest systems that exhibits chaotic behavior.
+      Two pendulums attached end-to-end create unpredictable, mesmerizing motion patterns
+      where tiny differences in starting conditions lead to completely different paths.
+    </p>
+
+    <h3>How to Interact:</h3>
+    <ul>
+      <li>Click to reset with random starting position</li>
+      <li>Drag to set custom starting position</li>
+      <li>Adjust gravity, length, and mass with controls</li>
+      <li>Watch the trail reveal chaotic patterns</li>
+      <li>T to toggle trail</li>
+      <li>C to clear trail</li>
+    </ul>
+
+    <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+      💡 Try launching multiple pendulums with slightly different angles to see chaos emerge!
+    </p>
+
+    <button class="btn btn-primary" onclick="hideInstructions()">Start</button>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="settings-panel">
+    <h3>Parameters</h3>
+
+    <div class="control-group">
+      <label>
+        Gravity: <span class="value-display" id="gravity-val">1.0</span>
+      </label>
+      <input type="range" id="gravity" min="0.1" max="2" step="0.1" value="1" oninput="updateSettings()">
+    </div>
+
+    <div class="control-group">
+      <label>
+        Length 1: <span class="value-display" id="length1-val">100</span>
+      </label>
+      <input type="range" id="length1" min="50" max="200" step="10" value="100" oninput="updateSettings()">
+    </div>
+
+    <div class="control-group">
+      <label>
+        Length 2: <span class="value-display" id="length2-val">100</span>
+      </label>
+      <input type="range" id="length2" min="50" max="200" step="10" value="100" oninput="updateSettings()">
+    </div>
+
+    <div class="control-group">
+      <label>
+        Mass 1: <span class="value-display" id="mass1-val">10</span>
+      </label>
+      <input type="range" id="mass1" min="5" max="30" step="5" value="10" oninput="updateSettings()">
+    </div>
+
+    <div class="control-group">
+      <label>
+        Mass 2: <span class="value-display" id="mass2-val">10</span>
+      </label>
+      <input type="range" id="mass2" min="5" max="30" step="5" value="10" oninput="updateSettings()">
+    </div>
+
+    <button class="btn" onclick="addPendulum()" style="width: 100%; margin-top: 1rem;">
+      + Add Pendulum
+    </button>
+
+    <button class="btn" onclick="clearAll()" style="width: 100%; margin-top: 0.5rem;">
+      Clear All
+    </button>
+  </div>
+
+  <!-- Main Canvas -->
+  <div class="experiment-container">
+    <canvas id="canvas" class="experiment-canvas"></canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="toggleTrail()" title="Toggle Trail" aria-label="Toggle Trail" id="trail-btn">
+      🎨
+    </button>
+    <button class="btn btn-icon" onclick="clearTrails()" title="Clear Trails" aria-label="Clear">
+      🗑️
+    </button>
+    <button class="btn btn-icon" onclick="addPendulum()" title="Add Pendulum" aria-label="Add">
+      ➕
+    </button>
+    <button class="btn btn-icon" onclick="saveImage()" title="Save" aria-label="Save">
+      ⬇
+    </button>
+    <button class="btn btn-icon" onclick="toggleInfo()" title="Info" aria-label="Info">
+      ℹ
+    </button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">
+      ← Gallery
+    </button>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info-panel" id="info-panel">
+    <h2>About Double Pendulum Chaos</h2>
+    <p>
+      The double pendulum is a classic example of a chaotic system. Despite being
+      governed by deterministic physics equations, its behavior is practically
+      unpredictable due to extreme sensitivity to initial conditions.
+    </p>
+
+    <h3>Technical Details</h3>
+    <p>
+      Simulates double pendulum motion using the Lagrangian mechanics equations.
+      The system has two degrees of freedom (two angles) and conserves energy
+      in the absence of friction.
+    </p>
+
+    <p>
+      The equations of motion are:
+    </p>
+    <code style="display: block; margin: 1rem 0; padding: 0.5rem; background: var(--bg-dark); border-radius: 4px; font-size: 0.8rem;">
+      θ₁'' = complex nonlinear function<br>
+      θ₂'' = complex nonlinear function
+    </code>
+
+    <p>
+      Uses the Runge-Kutta 4th order method (RK4) for numerical integration
+      to maintain accuracy and stability.
+    </p>
+
+    <h3>Chaos Theory</h3>
+    <p>
+      The "butterfly effect" is clearly visible: launch two pendulums with
+      nearly identical starting angles, and they will diverge into completely
+      different motions within seconds.
+    </p>
+
+    <h3>Interaction Guide</h3>
+    <ul>
+      <li><code>Click</code> - Add pendulum at random angle</li>
+      <li><code>Drag</code> - Set custom starting position</li>
+      <li><code>T</code> - Toggle trail visibility</li>
+      <li><code>C</code> - Clear all trails</li>
+      <li><code>Space</code> - Pause/Resume</li>
+      <li><code>Sliders</code> - Adjust physical parameters</li>
+    </ul>
+
+    <h3>Try This</h3>
+    <p>
+      1. Add a pendulum<br>
+      2. Note its starting position<br>
+      3. Add another pendulum with a VERY slightly different angle<br>
+      4. Watch them diverge into chaos!
+    </p>
+
+    <h3>Inspiration</h3>
+    <p>
+      Based on classical mechanics and chaos theory. The double pendulum has
+      been studied since the 1800s and remains a fascinating demonstration
+      of deterministic chaos.
+    </p>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    // ============================================
+    // SETUP
+    // ============================================
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let centerX, centerY;
+
+    // Pendulums
+    let pendulums = [];
+    let showTrail = true;
+    let isPaused = false;
+
+    // Settings
+    let settings = {
+      gravity: 1.0,
+      length1: 100,
+      length2: 100,
+      mass1: 10,
+      mass2: 10
+    };
+
+    // Colors
+    const COLORS = [
+      '#6366f1', '#ec4899', '#14b8a6', '#f59e0b',
+      '#8b5cf6', '#10b981', '#f43f5e', '#3b82f6'
+    ];
+    let colorIndex = 0;
+
+    // ============================================
+    // DOUBLE PENDULUM CLASS
+    // ============================================
+
+    class DoublePendulum {
+      constructor(angle1, angle2, color) {
+        this.angle1 = angle1;
+        this.angle2 = angle2;
+        this.angleVel1 = 0;
+        this.angleVel2 = 0;
+        this.color = color;
+        this.trail = [];
+        this.maxTrailLength = 500;
+      }
+
+      update(dt = 0.1) {
+        // Using RK4 integration for accuracy
+        const g = settings.gravity;
+        const m1 = settings.mass1;
+        const m2 = settings.mass2;
+        const l1 = settings.length1;
+        const l2 = settings.length2;
+
+        // Equations of motion for double pendulum (derived from Lagrangian)
+        const num1a = -g * (2 * m1 + m2) * Math.sin(this.angle1);
+        const num1b = -m2 * g * Math.sin(this.angle1 - 2 * this.angle2);
+        const num1c = -2 * Math.sin(this.angle1 - this.angle2) * m2;
+        const num1d = this.angleVel2 * this.angleVel2 * l2 +
+                      this.angleVel1 * this.angleVel1 * l1 * Math.cos(this.angle1 - this.angle2);
+        const den1 = l1 * (2 * m1 + m2 - m2 * Math.cos(2 * this.angle1 - 2 * this.angle2));
+
+        const angleAcc1 = (num1a + num1b + num1c * num1d) / den1;
+
+        const num2a = 2 * Math.sin(this.angle1 - this.angle2);
+        const num2b = this.angleVel1 * this.angleVel1 * l1 * (m1 + m2);
+        const num2c = g * (m1 + m2) * Math.cos(this.angle1);
+        const num2d = this.angleVel2 * this.angleVel2 * l2 * m2 * Math.cos(this.angle1 - this.angle2);
+        const den2 = l2 * (2 * m1 + m2 - m2 * Math.cos(2 * this.angle1 - 2 * this.angle2));
+
+        const angleAcc2 = (num2a * (num2b + num2c + num2d)) / den2;
+
+        // Update velocities and angles
+        this.angleVel1 += angleAcc1 * dt;
+        this.angleVel2 += angleAcc2 * dt;
+        this.angle1 += this.angleVel1 * dt;
+        this.angle2 += this.angleVel2 * dt;
+
+        // Add friction (small amount)
+        this.angleVel1 *= 0.9999;
+        this.angleVel2 *= 0.9999;
+
+        // Calculate bob positions
+        const x1 = centerX + settings.length1 * Math.sin(this.angle1);
+        const y1 = centerY + settings.length1 * Math.cos(this.angle1);
+        const x2 = x1 + settings.length2 * Math.sin(this.angle2);
+        const y2 = y1 + settings.length2 * Math.cos(this.angle2);
+
+        // Add to trail
+        if (showTrail) {
+          this.trail.push({ x: x2, y: y2 });
+          if (this.trail.length > this.maxTrailLength) {
+            this.trail.shift();
+          }
+        }
+      }
+
+      draw() {
+        const x1 = centerX + settings.length1 * Math.sin(this.angle1);
+        const y1 = centerY + settings.length1 * Math.cos(this.angle1);
+        const x2 = x1 + settings.length2 * Math.sin(this.angle2);
+        const y2 = y1 + settings.length2 * Math.cos(this.angle2);
+
+        // Draw trail
+        if (showTrail && this.trail.length > 1) {
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.6;
+          ctx.beginPath();
+
+          for (let i = 0; i < this.trail.length; i++) {
+            const point = this.trail[i];
+            if (i === 0) {
+              ctx.moveTo(point.x, point.y);
+            } else {
+              ctx.lineTo(point.x, point.y);
+            }
+          }
+
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+
+        // Draw rods
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+
+        // Rod 1
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+
+        // Rod 2
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // Draw bobs
+        ctx.fillStyle = this.color;
+
+        // Bob 1
+        ctx.beginPath();
+        ctx.arc(x1, y1, settings.mass1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bob 2
+        ctx.beginPath();
+        ctx.arc(x2, y2, settings.mass2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw anchor point
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+
+      // Add initial pendulum
+      addPendulum();
+
+      // Start animation
+      animate();
+    }
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 3;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      ctx.scale(dpr, dpr);
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+
+    function setupEventListeners() {
+      window.addEventListener('resize', resizeCanvas);
+
+      // Click to add pendulum
+      canvas.addEventListener('click', (e) => {
+        addPendulum();
+      });
+
+      // Keyboard
+      document.addEventListener('keydown', (e) => {
+        switch(e.key.toLowerCase()) {
+          case ' ':
+            e.preventDefault();
+            isPaused = !isPaused;
+            break;
+          case 't':
+            e.preventDefault();
+            toggleTrail();
+            break;
+          case 'c':
+            e.preventDefault();
+            clearTrails();
+            break;
+          case 's':
+            e.preventDefault();
+            saveImage();
+            break;
+          case 'i':
+            e.preventDefault();
+            toggleInfo();
+            break;
+        }
+      });
+    }
+
+    // ============================================
+    // ANIMATION LOOP
+    // ============================================
+
+    function animate() {
+      // Clear canvas
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+
+      if (!isPaused) {
+        // Update all pendulums
+        pendulums.forEach(p => p.update());
+      }
+
+      // Draw all pendulums
+      pendulums.forEach(p => p.draw());
+
+      requestAnimationFrame(animate);
+    }
+
+    // ============================================
+    // CONTROLS
+    // ============================================
+
+    function addPendulum() {
+      const angle1 = Utils.random(-Math.PI, Math.PI);
+      const angle2 = Utils.random(-Math.PI, Math.PI);
+      const color = COLORS[colorIndex % COLORS.length];
+      colorIndex++;
+
+      const pendulum = new DoublePendulum(angle1, angle2, color);
+      pendulums.push(pendulum);
+
+      console.log(`Added pendulum #${pendulums.length}`);
+    }
+
+    function updateSettings() {
+      settings.gravity = parseFloat(document.getElementById('gravity').value);
+      settings.length1 = parseFloat(document.getElementById('length1').value);
+      settings.length2 = parseFloat(document.getElementById('length2').value);
+      settings.mass1 = parseFloat(document.getElementById('mass1').value);
+      settings.mass2 = parseFloat(document.getElementById('mass2').value);
+
+      // Update displays
+      document.getElementById('gravity-val').textContent = settings.gravity.toFixed(1);
+      document.getElementById('length1-val').textContent = settings.length1;
+      document.getElementById('length2-val').textContent = settings.length2;
+      document.getElementById('mass1-val').textContent = settings.mass1;
+      document.getElementById('mass2-val').textContent = settings.mass2;
+    }
+
+    function toggleTrail() {
+      showTrail = !showTrail;
+      document.getElementById('trail-btn').textContent = showTrail ? '🎨' : '⭕';
+    }
+
+    function clearTrails() {
+      pendulums.forEach(p => p.trail = []);
+    }
+
+    function clearAll() {
+      pendulums = [];
+      colorIndex = 0;
+    }
+
+    function saveImage() {
+      Canvas.download(canvas, 'double-pendulum.png');
+    }
+
+    function toggleInfo() {
+      document.getElementById('info-panel').classList.toggle('open');
+    }
+
+    function hideInstructions() {
+      document.getElementById('instructions').classList.add('hidden');
+    }
+
+    // ============================================
+    // START
+    // ============================================
+
+    window.addEventListener('load', () => {
+      init();
+      updateSettings();
+    });
+  </script>
+</body>
+</html>

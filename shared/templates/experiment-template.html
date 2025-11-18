@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Experiment Name | Creative Web Experiments</title>
+  <meta name="description" content="A brief description of your experiment">
+  <link rel="stylesheet" href="../../shared/styles.css">
+  <style>
+    /* Experiment-specific styles */
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- Instructions Overlay (shown on load) -->
+  <div class="instructions-overlay" id="instructions">
+    <h1>Experiment Name</h1>
+    <p>Brief description of what this experiment does and why it's interesting.</p>
+
+    <h3>How to Interact:</h3>
+    <ul>
+      <li>Mouse/Touch: Primary interaction</li>
+      <li>Spacebar: Reset</li>
+      <li>S: Save image</li>
+      <li>I: Toggle info panel</li>
+    </ul>
+
+    <button class="btn btn-primary" onclick="hideInstructions()">Start Experiment</button>
+  </div>
+
+  <!-- Main Canvas -->
+  <div class="experiment-container">
+    <canvas id="canvas" class="experiment-canvas"></canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="reset()" title="Reset" aria-label="Reset">
+      ↻
+    </button>
+    <button class="btn btn-icon" onclick="saveImage()" title="Save Image" aria-label="Save Image">
+      ⬇
+    </button>
+    <button class="btn btn-icon" onclick="toggleInfo()" title="Info" aria-label="Toggle Info">
+      ℹ
+    </button>
+    <button class="btn" onclick="window.location.href='../../index.html'">
+      ← Gallery
+    </button>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info-panel" id="info-panel">
+    <h2>About This Experiment</h2>
+    <p>
+      Detailed explanation of the concept, inspiration, and what makes this experiment special.
+    </p>
+
+    <h3>Technical Details</h3>
+    <p>
+      Explain the algorithms, techniques, or interesting code used. For example:
+      "Uses Perlin noise for organic motion" or "Implements verlet integration for physics".
+    </p>
+
+    <h3>Interaction Guide</h3>
+    <ul>
+      <li><code>Click/Touch</code> - Main interaction</li>
+      <li><code>Drag</code> - Secondary interaction</li>
+      <li><code>Spacebar</code> - Reset</li>
+      <li><code>S</code> - Save image</li>
+      <li><code>I</code> - Toggle this panel</li>
+    </ul>
+
+    <h3>Customization</h3>
+    <p>Add sliders or controls here for user customization</p>
+
+    <h3>Inspiration</h3>
+    <p>
+      Credit sources of inspiration, similar works, or educational resources.
+    </p>
+
+    <h3>Share This</h3>
+    <button class="btn" onclick="copyURL()">Copy Link</button>
+  </div>
+
+  <!-- Load utilities -->
+  <script src="../../shared/utils.js"></script>
+
+  <script>
+    // ============================================
+    // SETUP
+    // ============================================
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let animationId;
+
+    // Experiment state
+    let state = {
+      // Add your state variables here
+      isRunning: false
+    };
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+      loadStateFromURL();
+
+      // Initialize your experiment here
+
+      state.isRunning = true;
+      animate();
+    }
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      ctx.scale(dpr, dpr);
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+
+    function setupEventListeners() {
+      // Resize
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        reset();
+      });
+
+      // Mouse/Touch events
+      canvas.addEventListener('mousedown', handlePointerStart);
+      canvas.addEventListener('mousemove', handlePointerMove);
+      canvas.addEventListener('mouseup', handlePointerEnd);
+
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        handlePointerStart({ clientX: touch.clientX, clientY: touch.clientY });
+      });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        handlePointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+      });
+
+      canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handlePointerEnd();
+      });
+
+      // Keyboard
+      document.addEventListener('keydown', (e) => {
+        switch(e.key.toLowerCase()) {
+          case ' ':
+            e.preventDefault();
+            reset();
+            break;
+          case 's':
+            e.preventDefault();
+            saveImage();
+            break;
+          case 'i':
+            e.preventDefault();
+            toggleInfo();
+            break;
+        }
+      });
+    }
+
+    // ============================================
+    // INTERACTION HANDLERS
+    // ============================================
+
+    function handlePointerStart(e) {
+      const x = e.clientX;
+      const y = e.clientY;
+
+      // Your interaction logic here
+    }
+
+    function handlePointerMove(e) {
+      const x = e.clientX;
+      const y = e.clientY;
+
+      // Your interaction logic here
+    }
+
+    function handlePointerEnd(e) {
+      // Your interaction logic here
+    }
+
+    // ============================================
+    // ANIMATION LOOP
+    // ============================================
+
+    function animate() {
+      if (!state.isRunning) return;
+
+      // Clear canvas
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Your drawing/update logic here
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // ============================================
+    // EXPERIMENT LOGIC
+    // ============================================
+
+    function update() {
+      // Update your simulation/animation here
+    }
+
+    function draw() {
+      // Draw your visuals here
+    }
+
+    // ============================================
+    // CONTROLS
+    // ============================================
+
+    function reset() {
+      // Reset experiment state
+      state = {
+        isRunning: true
+      };
+      // Reinitialize if needed
+    }
+
+    function saveImage() {
+      Canvas.download(canvas, 'experiment.png');
+    }
+
+    function toggleInfo() {
+      document.getElementById('info-panel').classList.toggle('open');
+    }
+
+    function hideInstructions() {
+      document.getElementById('instructions').classList.add('hidden');
+    }
+
+    function copyURL() {
+      // Save state to URL first
+      saveStateToURL();
+
+      // Copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+
+    // ============================================
+    // STATE PERSISTENCE
+    // ============================================
+
+    function saveStateToURL() {
+      // Save experiment state to URL parameters
+      // Example:
+      // URLState.set('seed', state.seed);
+      // URLState.set('color', state.color);
+    }
+
+    function loadStateFromURL() {
+      // Load experiment state from URL parameters
+      // Example:
+      // const seed = URLState.get('seed');
+      // if (seed) state.seed = parseInt(seed);
+    }
+
+    // ============================================
+    // START
+    // ============================================
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

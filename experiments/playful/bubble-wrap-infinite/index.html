@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bubble Wrap Infinite | Creative Web Experiments</title>
+  <meta name="description" content="Pop bubbles forever. The most satisfying waste of time on the internet.">
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .stats-display {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem 3rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow-xl);
+      text-align: center;
+      z-index: 100;
+    }
+
+    .stats-display h2 {
+      color: #667eea;
+      font-size: 3rem;
+      margin: 0;
+      font-weight: 800;
+    }
+
+    .stats-display p {
+      color: #666;
+      margin: 0.5rem 0 0 0;
+      font-size: 0.9rem;
+    }
+
+    .combo-display {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      font-weight: 800;
+      color: white;
+      text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 200;
+      animation: comboFade 1s ease-out;
+    }
+
+    @keyframes comboFade {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .achievement {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      z-index: 150;
+      animation: slideIn 0.5s ease-out, slideOut 0.5s ease-in 2.5s;
+      animation-fill-mode: forwards;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(400px); }
+      to { transform: translateX(0); }
+    }
+
+    @keyframes slideOut {
+      from { transform: translateX(0); }
+      to { transform: translateX(400px); }
+    }
+
+    .achievement-title {
+      color: #667eea;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .achievement-desc {
+      color: #666;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Instructions Overlay -->
+  <div class="instructions-overlay" id="instructions">
+    <h1>💫 Bubble Wrap Infinite</h1>
+    <p>
+      The most satisfying waste of time on the internet. Pop infinite bubbles,
+      unlock achievements, and watch your stress melt away. No judgment here -
+      we all need to pop some bubbles sometimes.
+    </p>
+
+    <h3>How to Pop:</h3>
+    <ul>
+      <li>Click bubbles to pop them (so satisfying)</li>
+      <li>Drag across multiple bubbles for combos</li>
+      <li>Pop fast for bonus points</li>
+      <li>Unlock achievements for milestones</li>
+      <li>Bubbles respawn automatically</li>
+      <li>There is no end. Only pops.</li>
+    </ul>
+
+    <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+      🎧 Turn on sound for maximum satisfaction!
+    </p>
+
+    <button class="btn btn-primary" onclick="hideInstructions()">Start Popping</button>
+  </div>
+
+  <!-- Stats Display -->
+  <div class="stats-display">
+    <h2 id="pop-count">0</h2>
+    <p>BUBBLES POPPED</p>
+  </div>
+
+  <!-- Main Canvas -->
+  <div class="experiment-container">
+    <canvas id="canvas" class="experiment-canvas"></canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-panel">
+    <button class="btn btn-icon" id="sound-btn" onclick="toggleSound()" title="Sound" aria-label="Sound">
+      🔊
+    </button>
+    <button class="btn btn-icon" onclick="reset()" title="Reset" aria-label="Reset">
+      ↻
+    </button>
+    <button class="btn btn-icon" onclick="saveImage()" title="Save" aria-label="Save">
+      ⬇
+    </button>
+    <button class="btn btn-icon" onclick="toggleInfo()" title="Info" aria-label="Info">
+      ℹ
+    </button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">
+      ← Gallery
+    </button>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info-panel" id="info-panel">
+    <h2>About Bubble Wrap Infinite</h2>
+    <p>
+      A stress-relief simulator based on everyone's favorite packing material.
+      Studies show that popping bubble wrap can actually reduce stress and
+      increase focus. Consider this your digital stress ball.
+    </p>
+
+    <h3>Technical Details</h3>
+    <p>
+      Each bubble is rendered with radial gradients to create a 3D effect.
+      The pop animation uses easing functions and particle effects. Sound
+      is generated using the Web Audio API with slight pitch variations
+      for each pop.
+    </p>
+
+    <p>
+      Bubbles respawn with a delay, creating an infinite supply. The combo
+      system detects rapid sequential pops within a time window.
+    </p>
+
+    <h3>Achievements</h3>
+    <ul>
+      <li><strong>First Pop:</strong> Pop your first bubble</li>
+      <li><strong>Getting Started:</strong> Pop 10 bubbles</li>
+      <li><strong>Enthusiast:</strong> Pop 100 bubbles</li>
+      <li><strong>Dedicated:</strong> Pop 500 bubbles</li>
+      <li><strong>Obsessed:</strong> Pop 1000 bubbles</li>
+      <li><strong>Legendary:</strong> Pop 5000 bubbles</li>
+      <li><strong>Combo Master:</strong> 10+ bubble combo</li>
+      <li><strong>Speed Demon:</strong> Pop 20 in 10 seconds</li>
+    </ul>
+
+    <h3>Interaction Guide</h3>
+    <ul>
+      <li><code>Click</code> - Pop single bubble</li>
+      <li><code>Drag</code> - Pop multiple bubbles</li>
+      <li><code>Space</code> - Pop all bubbles</li>
+      <li><code>Sound Toggle</code> - Enable/disable pop sounds</li>
+    </ul>
+
+    <h3>Why Is This So Satisfying?</h3>
+    <p>
+      The satisfaction of popping bubble wrap comes from multiple factors:
+      the tactile feedback, the predictable outcome, the sound, and the
+      sense of completion. This digital version captures these elements
+      while being infinitely replayable.
+    </p>
+
+    <h3>Fun Facts</h3>
+    <p>
+      • Bubble wrap was invented in 1957<br>
+      • Last Monday in January is "Bubble Wrap Appreciation Day"<br>
+      • You'll never run out of bubbles here!
+    </p>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    // ============================================
+    // SETUP
+    // ============================================
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+
+    // Bubbles
+    let bubbles = [];
+    const BUBBLE_SIZE = 40;
+    const BUBBLE_SPACING = 50;
+
+    // Stats
+    let popCount = 0;
+    let comboCount = 0;
+    let lastPopTime = 0;
+    let achievements = new Set();
+
+    // Sound
+    let audioContext;
+    let soundEnabled = true;
+
+    // Particles
+    let particles = [];
+
+    // ============================================
+    // BUBBLE CLASS
+    // ============================================
+
+    class Bubble {
+      constructor(x, y, row, col) {
+        this.x = x;
+        this.y = y;
+        this.row = row;
+        this.col = col;
+        this.popped = false;
+        this.respawnTime = 0;
+        this.popAnimation = 0;
+        this.hovered = false;
+      }
+
+      pop() {
+        if (this.popped) return false;
+
+        this.popped = true;
+        this.popAnimation = 1;
+        this.respawnTime = Date.now() + 2000; // Respawn after 2 seconds
+
+        // Play sound
+        if (soundEnabled && audioContext) {
+          playPopSound();
+        }
+
+        // Create particles
+        for (let i = 0; i < 8; i++) {
+          particles.push(new Particle(this.x, this.y));
+        }
+
+        // Update stats
+        popCount++;
+        document.getElementById('pop-count').textContent = popCount;
+
+        // Check combo
+        const now = Date.now();
+        if (now - lastPopTime < 500) {
+          comboCount++;
+          if (comboCount >= 5) {
+            showCombo(comboCount);
+          }
+        } else {
+          comboCount = 1;
+        }
+        lastPopTime = now;
+
+        // Check achievements
+        checkAchievements();
+
+        return true;
+      }
+
+      update() {
+        // Respawn if needed
+        if (this.popped && Date.now() > this.respawnTime) {
+          this.popped = false;
+          this.popAnimation = 0;
+        }
+
+        // Animate pop
+        if (this.popAnimation > 0) {
+          this.popAnimation -= 0.05;
+          if (this.popAnimation < 0) this.popAnimation = 0;
+        }
+      }
+
+      draw() {
+        if (this.popped && this.popAnimation <= 0) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        if (this.popAnimation > 0) {
+          // Pop animation
+          const scale = 1 + (1 - this.popAnimation) * 0.5;
+          ctx.scale(scale, scale);
+          ctx.globalAlpha = this.popAnimation;
+        }
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.beginPath();
+        ctx.ellipse(2, 2, BUBBLE_SIZE / 2, BUBBLE_SIZE / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bubble base
+        const gradient = ctx.createRadialGradient(
+          -BUBBLE_SIZE / 4, -BUBBLE_SIZE / 4, 0,
+          0, 0, BUBBLE_SIZE / 2
+        );
+
+        if (this.hovered && !this.popped) {
+          gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+          gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.4)');
+          gradient.addColorStop(1, 'rgba(200, 200, 255, 0.3)');
+        } else {
+          gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+          gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+          gradient.addColorStop(1, 'rgba(200, 200, 255, 0.2)');
+        }
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, BUBBLE_SIZE / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(-BUBBLE_SIZE / 6, -BUBBLE_SIZE / 6, BUBBLE_SIZE / 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = 'rgba(200, 200, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, BUBBLE_SIZE / 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      containsPoint(x, y) {
+        const dx = x - this.x;
+        const dy = y - this.y;
+        return Math.sqrt(dx * dx + dy * dy) < BUBBLE_SIZE / 2;
+      }
+    }
+
+    // ============================================
+    // PARTICLE CLASS
+    // ============================================
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        const angle = Utils.random(0, Math.PI * 2);
+        const speed = Utils.random(2, 5);
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.life = 1;
+        this.size = Utils.random(2, 5);
+        this.color = `hsl(${Utils.random(200, 280)}, 70%, 70%)`;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // Gravity
+        this.life -= 0.02;
+      }
+
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // ============================================
+    // SOUND
+    // ============================================
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playPopSound() {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = Utils.random(800, 1200);
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    }
+
+    // ============================================
+    // ACHIEVEMENTS
+    // ============================================
+
+    const ACHIEVEMENTS = {
+      'first_pop': { count: 1, name: '🎈 First Pop!', desc: 'You popped your first bubble' },
+      'getting_started': { count: 10, name: '🎯 Getting Started', desc: '10 bubbles popped' },
+      'enthusiast': { count: 100, name: '🌟 Enthusiast', desc: '100 bubbles popped' },
+      'dedicated': { count: 500, name: '💎 Dedicated Popper', desc: '500 bubbles popped' },
+      'obsessed': { count: 1000, name: '👑 Obsessed', desc: '1000 bubbles popped!' },
+      'legendary': { count: 5000, name: '🏆 Legendary', desc: '5000 bubbles! Incredible!' }
+    };
+
+    function checkAchievements() {
+      for (const [key, achievement] of Object.entries(ACHIEVEMENTS)) {
+        if (!achievements.has(key) && popCount >= achievement.count) {
+          achievements.add(key);
+          showAchievement(achievement.name, achievement.desc);
+        }
+      }
+
+      // Combo achievement
+      if (!achievements.has('combo_master') && comboCount >= 10) {
+        achievements.add('combo_master');
+        showAchievement('🔥 Combo Master', '10+ bubble combo!');
+      }
+    }
+
+    function showAchievement(title, desc) {
+      const div = document.createElement('div');
+      div.className = 'achievement';
+      div.innerHTML = `
+        <div class="achievement-title">${title}</div>
+        <div class="achievement-desc">${desc}</div>
+      `;
+      document.body.appendChild(div);
+
+      setTimeout(() => div.remove(), 3000);
+    }
+
+    function showCombo(count) {
+      const div = document.createElement('div');
+      div.className = 'combo-display';
+      div.textContent = `${count}x COMBO!`;
+      document.body.appendChild(div);
+
+      setTimeout(() => div.remove(), 1000);
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+
+      // Create bubble grid
+      createBubbles();
+
+      // Start animation
+      animate();
+    }
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      ctx.scale(dpr, dpr);
+    }
+
+    function createBubbles() {
+      bubbles = [];
+
+      const cols = Math.ceil(width / BUBBLE_SPACING);
+      const rows = Math.ceil(height / BUBBLE_SPACING);
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = col * BUBBLE_SPACING + BUBBLE_SPACING / 2;
+          const y = row * BUBBLE_SPACING + BUBBLE_SPACING / 2;
+
+          // Offset every other row
+          const offsetX = row % 2 === 0 ? 0 : BUBBLE_SPACING / 2;
+
+          bubbles.push(new Bubble(x + offsetX, y, row, col));
+        }
+      }
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+
+    function setupEventListeners() {
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        createBubbles();
+      });
+
+      // Mouse events
+      let isPopping = false;
+
+      canvas.addEventListener('mousedown', (e) => {
+        isPopping = true;
+        initAudio(); // Initialize audio on first interaction
+        handlePop(e.clientX, e.clientY);
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        // Update hover state
+        bubbles.forEach(bubble => {
+          bubble.hovered = bubble.containsPoint(e.clientX, e.clientY);
+        });
+
+        if (isPopping) {
+          handlePop(e.clientX, e.clientY);
+        }
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        isPopping = false;
+      });
+
+      // Touch events
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        initAudio();
+        const touch = e.touches[0];
+        handlePop(touch.clientX, touch.clientY);
+      });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        handlePop(touch.clientX, touch.clientY);
+      });
+
+      // Keyboard
+      document.addEventListener('keydown', (e) => {
+        switch(e.key.toLowerCase()) {
+          case ' ':
+            e.preventDefault();
+            popAll();
+            break;
+          case 's':
+            e.preventDefault();
+            saveImage();
+            break;
+          case 'i':
+            e.preventDefault();
+            toggleInfo();
+            break;
+        }
+      });
+    }
+
+    function handlePop(x, y) {
+      bubbles.forEach(bubble => {
+        if (bubble.containsPoint(x, y)) {
+          bubble.pop();
+        }
+      });
+    }
+
+    function popAll() {
+      bubbles.forEach(bubble => bubble.pop());
+    }
+
+    // ============================================
+    // ANIMATION LOOP
+    // ============================================
+
+    function animate() {
+      // Clear canvas
+      ctx.fillStyle = 'rgba(102, 126, 234, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update bubbles
+      bubbles.forEach(bubble => {
+        bubble.update();
+        bubble.draw();
+      });
+
+      // Update and draw particles
+      particles = particles.filter(p => {
+        p.update();
+        p.draw();
+        return p.life > 0;
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    // ============================================
+    // CONTROLS
+    // ============================================
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
+    }
+
+    function reset() {
+      popCount = 0;
+      comboCount = 0;
+      achievements.clear();
+      document.getElementById('pop-count').textContent = '0';
+      bubbles.forEach(bubble => {
+        bubble.popped = false;
+        bubble.popAnimation = 0;
+      });
+    }
+
+    function saveImage() {
+      Canvas.download(canvas, 'bubble-wrap.png');
+    }
+
+    function toggleInfo() {
+      document.getElementById('info-panel').classList.toggle('open');
+    }
+
+    function hideInstructions() {
+      document.getElementById('instructions').classList.add('hidden');
+    }
+
+    // ============================================
+    // START
+    // ============================================
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

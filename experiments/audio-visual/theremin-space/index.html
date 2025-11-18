@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theremin in Space | Creative Web Experiments</title>
+  <meta name="description" content="Control ethereal sounds with your mouse position. A digital theremin meets cosmic visuals.">
+  <link rel="stylesheet" href="../../../shared/styles.css">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .frequency-display {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: rgba(255, 255, 255, 0.8);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 1rem;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+    }
+
+    .waveform-selector {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+
+    .wave-btn {
+      display: block;
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+
+    .wave-btn.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    .click-to-start {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(15, 23, 42, 0.95);
+      padding: 3rem;
+      border-radius: 16px;
+      border: 1px solid var(--bg-light);
+      text-align: center;
+      z-index: 3000;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .click-to-start h2 {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.05); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Instructions Overlay -->
+  <div class="instructions-overlay" id="instructions">
+    <h1>🎵 Theremin in Space</h1>
+    <p>
+      A digital theremin that creates ethereal sounds based on your mouse position.
+      X-axis controls pitch (frequency), Y-axis controls volume. Watch the cosmic
+      visualization react to the frequencies you create.
+    </p>
+
+    <h3>How to Play:</h3>
+    <ul>
+      <li>Move mouse left/right to change pitch</li>
+      <li>Move mouse up/down to change volume</li>
+      <li>Click to activate sound (browser requirement)</li>
+      <li>Number keys 1-4 to change waveform</li>
+      <li>Spacebar to mute/unmute</li>
+    </ul>
+
+    <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+      🎧 Headphones recommended for the best experience!
+    </p>
+
+    <button class="btn btn-primary" onclick="hideInstructions()">Start Playing</button>
+  </div>
+
+  <!-- Click to Start (required for Web Audio) -->
+  <div class="click-to-start" id="click-to-start">
+    <h2>Click Anywhere to Start</h2>
+    <p style="color: var(--text-secondary);">
+      (Web browsers require user interaction to enable audio)
+    </p>
+  </div>
+
+  <!-- Main Canvas -->
+  <div class="experiment-container">
+    <canvas id="canvas" class="experiment-canvas"></canvas>
+  </div>
+
+  <!-- Frequency Display -->
+  <div class="frequency-display">
+    <div>Frequency: <span id="freq">440</span> Hz</div>
+    <div>Volume: <span id="vol">50</span>%</div>
+    <div>Waveform: <span id="wave">sine</span></div>
+    <div style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
+      <span id="note-name">A4</span>
+    </div>
+  </div>
+
+  <!-- Waveform Selector -->
+  <div class="waveform-selector">
+    <button class="btn wave-btn active" data-wave="sine" onclick="setWaveform('sine')">
+      Sine (1)
+    </button>
+    <button class="btn wave-btn" data-wave="square" onclick="setWaveform('square')">
+      Square (2)
+    </button>
+    <button class="btn wave-btn" data-wave="sawtooth" onclick="setWaveform('sawtooth')">
+      Sawtooth (3)
+    </button>
+    <button class="btn wave-btn" data-wave="triangle" onclick="setWaveform('triangle')">
+      Triangle (4)
+    </button>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-panel">
+    <button class="btn btn-icon" onclick="toggleMute()" title="Mute" aria-label="Mute" id="mute-btn">
+      🔊
+    </button>
+    <button class="btn btn-icon" onclick="saveImage()" title="Save" aria-label="Save">
+      ⬇
+    </button>
+    <button class="btn btn-icon" onclick="toggleInfo()" title="Info" aria-label="Info">
+      ℹ
+    </button>
+    <button class="btn" onclick="window.location.href='../../../index.html'">
+      ← Gallery
+    </button>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info-panel" id="info-panel">
+    <h2>About Theremin in Space</h2>
+    <p>
+      A digital recreation of the theremin, one of the earliest electronic musical
+      instruments. The original theremin was controlled by hand proximity to two
+      antennas - this version uses mouse position instead.
+    </p>
+
+    <h3>Technical Details</h3>
+    <p>
+      Built with the Web Audio API using OscillatorNode and GainNode. The
+      frequency range is 100Hz to 2000Hz (roughly D2 to C7). Volume is controlled
+      by Y-axis position with smooth ramping to prevent clicks.
+    </p>
+
+    <p>
+      The visualization uses FFT (Fast Fourier Transform) data from an AnalyserNode
+      to create reactive graphics. Circles pulse with amplitude, colors shift with
+      frequency.
+    </p>
+
+    <h3>How to Play</h3>
+    <ul>
+      <li><code>Mouse X</code> - Pitch (left = low, right = high)</li>
+      <li><code>Mouse Y</code> - Volume (top = quiet, bottom = loud)</li>
+      <li><code>1-4 Keys</code> - Change waveform</li>
+      <li><code>Space</code> - Mute/Unmute</li>
+    </ul>
+
+    <h3>Waveforms</h3>
+    <p>
+      <strong>Sine:</strong> Pure, smooth tone<br>
+      <strong>Square:</strong> Hollow, clarinet-like<br>
+      <strong>Sawtooth:</strong> Bright, brassy<br>
+      <strong>Triangle:</strong> Mellow, flute-like
+    </p>
+
+    <h3>Musical Notes</h3>
+    <p>
+      The display shows the nearest musical note to the current frequency.
+      Try to "play" a melody by finding the right positions!
+    </p>
+
+    <h3>Inspiration</h3>
+    <p>
+      Created by Léon Theremin in 1920, the theremin was used in sci-fi movie
+      soundtracks and by artists like The Beach Boys. This digital version
+      brings that otherworldly sound to your browser.
+    </p>
+  </div>
+
+  <script src="../../../shared/utils.js"></script>
+  <script>
+    // ============================================
+    // SETUP
+    // ============================================
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+
+    // Audio context and nodes
+    let audioContext;
+    let oscillator;
+    let gainNode;
+    let analyser;
+    let isPlaying = false;
+    let isMuted = false;
+
+    // Audio parameters
+    let frequency = 440;
+    let volume = 0.5;
+    let waveform = 'sine';
+
+    // Mouse state
+    let mouseX = 0.5;
+    let mouseY = 0.5;
+
+    // Visualization
+    let particles = [];
+    const NUM_PARTICLES = 50;
+
+    // Musical notes for display
+    const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+    // ============================================
+    // AUDIO SETUP
+    // ============================================
+
+    function initAudio() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Create oscillator
+      oscillator = audioContext.createOscillator();
+      oscillator.type = waveform;
+      oscillator.frequency.value = frequency;
+
+      // Create gain (volume) node
+      gainNode = audioContext.createGain();
+      gainNode.gain.value = 0;
+
+      // Create analyser for visualization
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+
+      // Connect nodes
+      oscillator.connect(gainNode);
+      gainNode.connect(analyser);
+      analyser.connect(audioContext.destination);
+
+      // Start oscillator
+      oscillator.start();
+
+      isPlaying = true;
+      console.log('Audio initialized');
+    }
+
+    function updateAudio() {
+      if (!isPlaying) return;
+
+      // Update frequency (100Hz to 2000Hz)
+      frequency = Utils.map(mouseX, 0, 1, 100, 2000);
+      oscillator.frequency.setTargetAtTime(frequency, audioContext.currentTime, 0.01);
+
+      // Update volume (0 to 0.3, capped for safety)
+      const targetVolume = isMuted ? 0 : Utils.map(mouseY, 0, 1, 0, 0.3);
+      volume = targetVolume;
+      gainNode.gain.setTargetAtTime(volume, audioContext.currentTime, 0.01);
+
+      // Update displays
+      document.getElementById('freq').textContent = Math.round(frequency);
+      document.getElementById('vol').textContent = Math.round(volume * 333); // Scale to 0-100
+      document.getElementById('note-name').textContent = frequencyToNote(frequency);
+    }
+
+    function setWaveform(type) {
+      waveform = type;
+      if (oscillator) {
+        oscillator.type = type;
+      }
+
+      // Update button states
+      document.querySelectorAll('.wave-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`[data-wave="${type}"]`).classList.add('active');
+
+      document.getElementById('wave').textContent = type;
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      const btn = document.getElementById('mute-btn');
+      btn.textContent = isMuted ? '🔇' : '🔊';
+    }
+
+    function frequencyToNote(freq) {
+      const A4 = 440;
+      const C0 = A4 * Math.pow(2, -4.75);
+      const halfSteps = Math.round(12 * Math.log2(freq / C0));
+      const octave = Math.floor(halfSteps / 12);
+      const note = NOTE_NAMES[halfSteps % 12];
+      return `${note}${octave}`;
+    }
+
+    // ============================================
+    // VISUALIZATION
+    // ============================================
+
+    class SoundParticle {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        const angle = Utils.random(0, Math.PI * 2);
+        const distance = Utils.random(50, 200);
+        this.x = width / 2 + Math.cos(angle) * distance;
+        this.y = height / 2 + Math.sin(angle) * distance;
+        this.size = Utils.random(2, 6);
+        this.angle = angle;
+        this.radius = distance;
+        this.speed = Utils.random(0.001, 0.003);
+      }
+
+      update() {
+        // Orbit around center
+        this.angle += this.speed;
+
+        // Radius pulses with volume
+        const pulseRadius = this.radius + volume * 100;
+
+        this.x = width / 2 + Math.cos(this.angle) * pulseRadius;
+        this.y = height / 2 + Math.sin(this.angle) * pulseRadius;
+      }
+
+      draw() {
+        // Color based on frequency
+        const hue = Utils.map(frequency, 100, 2000, 240, 0);
+        const sat = 70;
+        const light = 50 + volume * 100;
+
+        // Draw glow
+        const gradient = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, this.size * 4
+        );
+        gradient.addColorStop(0, `hsla(${hue}, ${sat}%, ${light}%, ${volume * 3})`);
+        gradient.addColorStop(1, `hsla(${hue}, ${sat}%, ${light}%, 0)`);
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(
+          this.x - this.size * 4,
+          this.y - this.size * 4,
+          this.size * 8,
+          this.size * 8
+        );
+
+        // Draw core
+        ctx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function init() {
+      resizeCanvas();
+      setupEventListeners();
+
+      // Create particles
+      for (let i = 0; i < NUM_PARTICLES; i++) {
+        particles.push(new SoundParticle());
+      }
+
+      // Start animation
+      animate();
+    }
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      ctx.scale(dpr, dpr);
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+
+    function setupEventListeners() {
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        particles.forEach(p => p.reset());
+      });
+
+      // Mouse tracking
+      canvas.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX / width;
+        mouseY = e.clientY / height;
+      });
+
+      // Click to start (required for Web Audio API)
+      canvas.addEventListener('click', startAudio);
+      document.getElementById('click-to-start').addEventListener('click', startAudio);
+
+      // Touch support
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        mouseX = touch.clientX / width;
+        mouseY = touch.clientY / height;
+      });
+
+      canvas.addEventListener('touchstart', startAudio);
+
+      // Keyboard
+      document.addEventListener('keydown', (e) => {
+        switch(e.key) {
+          case '1':
+            setWaveform('sine');
+            break;
+          case '2':
+            setWaveform('square');
+            break;
+          case '3':
+            setWaveform('sawtooth');
+            break;
+          case '4':
+            setWaveform('triangle');
+            break;
+          case ' ':
+            e.preventDefault();
+            toggleMute();
+            break;
+          case 's':
+          case 'S':
+            if (!e.ctrlKey && !e.metaKey) {
+              e.preventDefault();
+              saveImage();
+            }
+            break;
+          case 'i':
+          case 'I':
+            e.preventDefault();
+            toggleInfo();
+            break;
+        }
+      });
+    }
+
+    function startAudio() {
+      if (!isPlaying) {
+        initAudio();
+        document.getElementById('click-to-start').style.display = 'none';
+      }
+    }
+
+    // ============================================
+    // ANIMATION LOOP
+    // ============================================
+
+    function animate() {
+      // Update audio
+      updateAudio();
+
+      // Clear canvas
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw frequency circle
+      const hue = Utils.map(frequency, 100, 2000, 240, 0);
+      const radius = 100 + volume * 300;
+
+      // Outer glow
+      const gradient = ctx.createRadialGradient(
+        width / 2, height / 2, 0,
+        width / 2, height / 2, radius
+      );
+      gradient.addColorStop(0, `hsla(${hue}, 70%, 50%, ${volume})`);
+      gradient.addColorStop(0.5, `hsla(${hue}, 70%, 50%, ${volume * 0.5})`);
+      gradient.addColorStop(1, `hsla(${hue}, 70%, 50%, 0)`);
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      // Center circle
+      ctx.strokeStyle = `hsl(${hue}, 70%, 50%)`;
+      ctx.lineWidth = 2 + volume * 10;
+      ctx.beginPath();
+      ctx.arc(width / 2, height / 2, radius / 2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Update and draw particles
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      // Draw waveform (if analyser exists)
+      if (analyser) {
+        drawWaveform();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function drawWaveform() {
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteTimeDomainData(dataArray);
+
+      const hue = Utils.map(frequency, 100, 2000, 240, 0);
+      ctx.strokeStyle = `hsla(${hue}, 70%, 60%, 0.5)`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      const sliceWidth = width / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * height / 2;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+      }
+
+      ctx.stroke();
+    }
+
+    // ============================================
+    // CONTROLS
+    // ============================================
+
+    function saveImage() {
+      Canvas.download(canvas, 'theremin-space.png');
+    }
+
+    function toggleInfo() {
+      document.getElementById('info-panel').classList.toggle('open');
+    }
+
+    function hideInstructions() {
+      document.getElementById('instructions').classList.add('hidden');
+    }
+
+    // ============================================
+    // START
+    // ============================================
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
